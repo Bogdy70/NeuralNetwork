@@ -15,6 +15,9 @@
 
 using namespace std;
 
+random_device rd;
+mt19937 gen(rd());
+
 struct Matrix
 {
     int rows;
@@ -242,6 +245,23 @@ struct Matrix
     }
 };
 
+Matrix random(const int rows, const int cols)
+{
+    normal_distribution<float> dist(0.0f, 1.0f);
+
+    Matrix C(rows, cols);
+
+    for (int i = 0; i < rows; i++)
+    {
+        for (int j = 0; j < cols; j++)
+        {
+            C(i, j) = dist(gen);
+        }
+    }
+
+    return C;
+}
+
 Matrix operator*(float x, const Matrix& A)
 {
     return A * x;
@@ -339,6 +359,38 @@ Matrix sum(const Matrix& A, int axis=-1)
     }
 }
 
+Matrix powM(const Matrix& A, float power)
+{
+    Matrix C(A.rows, A.cols);
+
+    for (int i = 0; i < A.rows; i++)
+    {
+        for (int j = 0; j < A.cols; j++)
+        {
+            C(i, j) = pow(A(i, j), power);
+        }
+    }
+
+    return C;
+}
+
+Matrix sqrtM(const Matrix& A)
+{
+    Matrix C(A.rows, A.cols);
+
+    for (int i = 0; i < A.rows; i++)
+    {
+        for (int j = 0; j < A.cols; j++)
+        {
+            if (A(i, j) < 0)
+                throw runtime_error("Numbers must not be negative");
+            C(i, j) = sqrtf(A(i, j));
+        }
+    }
+
+    return C;
+}
+
 Matrix expM(const Matrix& A)
 {
     Matrix C(A.rows, A.cols);
@@ -373,6 +425,88 @@ Matrix logM(const Matrix& A)
 Matrix sigmoid(const Matrix& A)
 {
     return 1.0f / (1.0f + expM((-1.0f) * A));
+}
+
+Matrix softmax(const Matrix& A)
+{
+    Matrix C(A.rows, A.cols);
+    Matrix exp_A = expM(A);
+    Matrix sum_exp = sum(exp_A, 0);
+
+    for (int i = 0; i < A.cols; i++)
+    {
+        for (int j = 0; j < A.rows; j++)
+        {
+            C(j, i) = exp_A(j, i) / sum_exp(0, i);
+        }
+    }
+
+    return C;
+}
+
+Matrix clipM(const Matrix& A, float minValue, float maxValue)
+{
+    Matrix C(A.rows, A.cols);
+
+    for (int i = 0; i < A.rows; i++)
+    {
+        for (int j = 0; j < A.cols; j++)
+        {
+            C(i, j) = max(minValue, min(maxValue, A(i, j)));
+        }
+    }
+
+    return C;
+}
+
+Matrix tanhM(const Matrix& A)
+{
+    Matrix C(A.rows, A.cols);
+
+    for (int i = 0; i < A.rows; i++)
+    {
+        for (int j = 0; j < A.cols; j++)
+        {
+            C(i, j) = tanh(A(i, j));
+        }
+    }
+
+    return C;
+}
+
+Matrix der_tanh(const Matrix& A)
+{
+    return 1 - powM(tanhM(A), 2);
+}
+
+Matrix relu(const Matrix& A)
+{
+    Matrix C(A.rows, A.cols);
+
+    for (int i = 0; i < A.rows; i++)
+    {
+        for (int j = 0; j < A.cols; j++)
+        {
+            C(i, j) = max(0.0f, A(i, j));
+        }
+    }
+
+    return C;
+}
+
+Matrix der_relu(const Matrix& A)
+{
+    Matrix C(A.rows, A.cols);
+
+    for (int i = 0; i < A.rows; i++)
+    {
+        for (int j = 0; j < A.cols; j++)
+        {
+            C(i, j) = A(i, j) > 0.0f ? 1.0f : 0.0f;
+        }
+    }
+
+    return C;
 }
 
 Matrix loadMatrixBins(const string& filepath, int rows, int cols)
@@ -708,7 +842,6 @@ int main()
         }
 
         cout << "\n\nMatrix exponential function\n\n";
-
 
     }
     catch (const exception& e)
