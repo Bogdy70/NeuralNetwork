@@ -681,12 +681,16 @@ struct Parameters
 {
     vector<Matrix> W;
     vector<Matrix> B;
+
+    Parameters(int dim): W(dim), B(dim) {}
 };
 
 struct Forward
 {
     vector<Matrix> Z;
     vector<Matrix> A;
+
+    Forward(int dim) : Z(dim), A(dim) {}
 };
 
 struct Backward
@@ -694,12 +698,16 @@ struct Backward
     vector<Matrix> dZ;
     vector<Matrix> dW;
     vector<Matrix> dB;
+
+    Backward(int dim): dZ(dim), dW(dim), dB(dim) {}
 };
 
 struct Activation
 {
     Matrix(*forward)(const Matrix&);
     Matrix(*derivate)(const Matrix&);
+
+    Activation(): forward(), derivate() {}
 
     Activation(const string& name)
     {
@@ -722,6 +730,8 @@ struct NetworkConfig
 {
     vector<int> dims;
     Activation activation;
+
+    NetworkConfig(const vector<int>& dim_list): dims(dim_list), activation() {}
 
     NetworkConfig(const vector<int>& dim_list, const string& activ_name) : dims(dim_list), activation(activ_name) {}
 };
@@ -766,6 +776,74 @@ void printMnistImage(const Matrix& img, int sample_idx)
         else
             cout << " ";
     }
+}
+
+Parameters init_params(const vector<int>& dim_list)
+{
+    int L = size(dim_list);
+    Parameters params(L);
+
+    for (int l = 1; l < L; l++)
+    {
+        params.W[l] = random(dim_list[l], dim_list[l - 1]) * sqrt(2.0f / static_cast<float>(dim_list[l - 1]));
+        params.B[l] = Matrix(dim_list[l], 1);
+    }
+
+    return params;
+}
+
+Forward forward_pass(const Parameters& params, const Matrix& X, const string& activation)
+{
+    int L = size(params.W);
+    Forward forward_cache(L);
+    Activation activ(activation);
+    Matrix(*final_activ)(const Matrix&);
+
+    forward_cache.A[0] = X;
+
+    for (int l = 1; l < L-1; l++)
+    {
+        forward_cache.Z[l] = params.W[l].matmul(forward_cache.A[l - 1]).broadcastAdd(params.B[l]);
+        forward_cache.A[l] = activ.forward(forward_cache.Z[l]);
+    }
+    forward_cache.Z[L-1] = params.W[L-1].matmul(forward_cache.A[L - 2]).broadcastAdd(params.B[L-1]);
+    final_activ = forward_cache.Z[L-1].rows > 1 ? softmax : sigmoid;
+    forward_cache.A[L-1] = final_activ(forward_cache.Z[L-1]);
+
+    return forward_cache;
+}
+
+Backward backpropagation(const Forward& frd_cache, const Parameters& params, const Matrix& Y, const string& activation)
+{
+    int L = size(frd_cache.A);
+    int m = Y.cols;
+    Backward grads(L);
+    Activation activ(activation);
+
+    grads.dZ[L - 1] = frd_cache.A[L - 1] - Y;
+    grads.dW[L - 1] = (1.0f / static_cast<float>(m)) * (grads.dZ[L - 1].matmul(frd_cache.A[L - 2].T()));
+    grads.dB[L - 1] = (1.0f / static_cast<float>(m)) * (sum(grads.dZ[L - 1], 1));
+
+    for (int l = L - 2; l > 0; l--)
+    {
+        grads.dZ[l] = (params.W[l + 1].T().matmul(grads.dZ[l + 1])) * activ.derivate(frd_cache.Z[l]);
+        grads.dW[l] = (1.0f / static_cast<float>(m)) * (grads.dZ[l].matmul(frd_cache.A[l - 1].T()));
+        grads.dB[l] = (1.0f / static_cast<float>(m)) * (sum(grads.dZ[l], 1));
+    }
+
+    return grads;
+}
+
+Parameters& optimizer(Parameters& params, const Backward& grads, const float lr)
+{
+    int L = size(params.W);
+    for (int l = 1; l < L; l++)
+    {
+        params.W[l] = params.W[l] - lr * grads.dW[l];
+        params.B[l] = params.B[l] - lr * grads.dB[l];
+    }
+
+    return params;
 }
 
 int main()
@@ -1058,8 +1136,53 @@ int main()
             cout << "\n";
         }
 
-        cout << "\n\nMatrix exponential function\n\n";
+        cout << "\n\nNetwork config\n\n";
 
+        vector<int> dim_list = { X_train_cat.rows, 100, 100, 200, y_train_cat.rows };
+
+        for (int i = 0; i < size(dim_list); i++)
+        {
+            cout << dim_list[i] << " ";
+        }
+
+        cout <<"\nSize of dimensions list: " << size(dim_list);
+
+        cout << "\n\nParameter initialization test\n\n";
+
+        Parameters params = init_params(dim_list);
+
+        for (int i = 1; i < size(dim_list); i++)
+        {
+            cout << "W" << i << " shape: " << "(" << params.W[i].rows << ", " << params.W[i].cols << ")\n";
+            cout << "B" << i << " shape: " << "(" << params.B[i].rows << ", " << params.B[i].cols << ")\n";
+        }
+
+        cout << "\n\nForward pass test\n\n";
+
+        Forward frd_cache = forward_pass(params, X_train_cat, "relu");
+
+        for (int i = 0; i < size(dim_list); i++)
+        {
+            cout << "A" << i << " shape: " << "(" << frd_cache.A[i].rows << ", " << frd_cache.A[i].cols << ")\n";
+        }
+
+        Matrix pred = frd_cache.A[size(params.W) - 1];
+        Matrix pred_labels = pred > 0.5f;
+
+        cout << "\n\nSize of pred: " << "(" << pred_labels.rows << ", " << pred_labels.cols << ")";
+        cout << "\n\nPred label: " << pred_labels(0, 101);
+        cout << "\n\nAccuracy: " << accuracy(y_train_cat, pred)*100<<"%";
+
+        cout << "\n\nBackpropagation test\n\n";
+
+        Backward grads = backpropagation(frd_cache, params, y_train_cat, "relu");
+
+        for (int i = size(dim_list) - 1; i > 0; i--)
+        {
+            cout << "dZ" << i << " shape: " << "(" << grads.dZ[i].rows << ", " << grads.dZ[i].cols << ")\n";
+            cout << "dW" << i << " shape: " << "(" << grads.dW[i].rows << ", " << grads.dW[i].cols << ")\n";
+            cout << "dB" << i << " shape: " << "(" << grads.dB[i].rows << ", " << grads.dB[i].cols << ")\n\n";
+        }
     }
     catch (const exception& e)
     {
