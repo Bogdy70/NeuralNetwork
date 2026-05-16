@@ -174,26 +174,6 @@ struct Matrix
         return C;
     }
 
-    Matrix broadcastAdd(const Matrix& B) const
-    {
-        if (rows != B.rows || B.cols != 1)
-        {
-            throw runtime_error("Invalid shape for addition with broadcast");
-        }
-
-        Matrix C(rows, cols);
-
-        for (int i = 0; i < rows; i++)
-        {
-            for (int j = 0; j < cols; j++)
-            {
-                C(i, j) = data[i * cols + j] + B(i, 0);
-            }
-        }
-
-        return C;
-    }
-
     Matrix operator-(const Matrix& B) const
     {
         if (rows != B.rows || cols != B.cols)
@@ -223,6 +203,59 @@ struct Matrix
             for (int j = 0; j < cols; j++)
             {
                 C(i, j) = data[i * cols + j] - x;
+            }
+        }
+
+        return C;
+    }
+
+    Matrix operator==(const Matrix& B) const
+    {
+        if (rows != B.rows || cols != B.cols)
+            throw runtime_error("Invalid shape");
+
+        Matrix C(rows, cols);
+
+        for (int i = 0; i < rows; i++)
+        {
+            for (int j = 0; j < cols; j++)
+            {
+                C(i, j) = data[i * cols + j] == B(i, j) ? 1.0f : 0.0f;
+            }
+        }
+
+        return C;
+    }
+
+    Matrix operator>(float x) const
+    {
+        Matrix C(rows, cols);
+
+        for (int i = 0; i < rows; i++)
+        {
+            for (int j = 0; j < cols; j++)
+            {
+                C(i, j) = data[i * cols + j] > x ? 1.0f : 0.0f;
+            }
+        }
+
+        return C;
+    }
+
+    Matrix broadcastAdd(const Matrix& B) const
+    {
+        if (rows != B.rows || B.cols != 1)
+        {
+            throw runtime_error("Invalid shape for addition with broadcast");
+        }
+
+        Matrix C(rows, cols);
+
+        for (int i = 0; i < rows; i++)
+        {
+            for (int j = 0; j < cols; j++)
+            {
+                C(i, j) = data[i * cols + j] + B(i, 0);
             }
         }
 
@@ -422,6 +455,128 @@ Matrix logM(const Matrix& A)
     return C;
 }
 
+Matrix maxM(const Matrix& A, int axis = -1)
+{
+    if (axis == 0)
+    {
+        Matrix C(1, A.cols);
+
+        for (int i = 0; i < A.cols; i++)
+        {
+            float maxA = A(0, i);
+
+            for (int j = 1; j < A.rows; j++)
+            {
+                maxA = max(maxA, A(j, i));
+            }
+            C(0, i) = maxA;
+        }
+
+        return C;
+    }
+    else if (axis == 1)
+    {
+        Matrix C(A.rows, 1);
+
+        for (int i = 0; i < A.rows; i++)
+        {
+            float maxA = A(i, 0);
+
+            for (int j = 1; j < A.cols; j++)
+            {
+                maxA = max(maxA, A(i, j));
+            }
+            C(i, 0) = maxA;
+        }
+
+        return C;
+    }
+    else if (axis == -1)
+    {
+        Matrix C(1, 1);
+
+        float maxA = A(0, 0);
+
+        for (int i = 0; i < A.rows; i++)
+        {
+            for (int j = 0; j < A.cols; j++)
+            {
+                maxA = max(maxA, A(i, j));
+            }
+        }
+
+        C(0, 0) = maxA;
+        return C;
+    }
+    else
+        throw runtime_error("Invalid axis value. Please input -1, 0 or 1");
+}
+
+Matrix argmax(const Matrix& A, int axis = 0)
+{
+    if (axis == 0)
+    {
+        Matrix C(1, A.cols);
+
+        for (int i = 0; i < A.cols; i++)
+        {
+            int idx = 0;
+            float maxA = A(0, i);
+
+            for (int j = 1; j < A.rows; j++)
+            {
+                if (A(j, i) > maxA)
+                {
+                    maxA = A(j, i);
+                    idx = j;
+                }
+            }
+            C(0, i) = idx;
+        }
+
+        return C;
+    }
+    else if (axis == 1)
+    {
+        Matrix C(A.rows, 1);
+
+        for (int i = 0; i < A.rows; i++)
+        {
+            int idx = 0;
+            float maxA = A(i, 0);
+
+            for (int j = 0; j < A.cols; j++)
+            {
+                if (A(i, j) > maxA)
+                {
+                    maxA = A(i, j);
+                    idx = j;
+                }
+            }
+            C(i, 0) = idx;
+        }
+
+        return C;
+    }
+    else
+        throw runtime_error("Invalid axis false. Please input 0 or 1");
+}
+
+Matrix clipM(const Matrix& A, float minValue, float maxValue)
+{
+    Matrix C(A.rows, A.cols);
+
+    for (int i = 0; i < A.rows; i++)
+    {
+        for (int j = 0; j < A.cols; j++)
+        {
+            C(i, j) = max(minValue, min(maxValue, A(i, j)));
+        }
+    }
+
+    return C;
+}
+
 Matrix sigmoid(const Matrix& A)
 {
     return 1.0f / (1.0f + expM((-1.0f) * A));
@@ -438,21 +593,6 @@ Matrix softmax(const Matrix& A)
         for (int j = 0; j < A.rows; j++)
         {
             C(j, i) = exp_A(j, i) / sum_exp(0, i);
-        }
-    }
-
-    return C;
-}
-
-Matrix clipM(const Matrix& A, float minValue, float maxValue)
-{
-    Matrix C(A.rows, A.cols);
-
-    for (int i = 0; i < A.rows; i++)
-    {
-        for (int j = 0; j < A.cols; j++)
-        {
-            C(i, j) = max(minValue, min(maxValue, A(i, j)));
         }
     }
 
@@ -508,6 +648,83 @@ Matrix der_relu(const Matrix& A)
 
     return C;
 }
+
+float cost(const Matrix& Y, const Matrix& pred)
+{
+    int m = Y.cols;
+    float epsilon = 1e-8f;
+    Matrix clippedPred = clipM(pred, epsilon, 1.0f - epsilon);
+
+    if (Y.rows > 1)
+        return (-1.0f / static_cast<float>(m)) * sum(Y * logM(clippedPred))(0, 0);
+    else
+        return (-1.0f / static_cast<float>(m)) * sum(Y * logM(clippedPred) + (1 - Y) * logM(1 - clippedPred))(0, 0);
+}
+
+float accuracy(const Matrix& Y, const Matrix& pred)
+{
+    if (Y.rows > 1)
+    {
+        Matrix true_labels = argmax(Y);
+        Matrix pred_labels = argmax(pred);
+
+        return sum(true_labels == pred_labels)(0, 0) / static_cast<float>(Y.cols);
+    }
+    else
+    {
+        Matrix pred_labels = pred > 0.5f;
+        return sum(Y==pred_labels)(0, 0) / static_cast<float>(Y.cols);
+    }
+}
+
+struct Parameters
+{
+    vector<Matrix> W;
+    vector<Matrix> B;
+};
+
+struct Forward
+{
+    vector<Matrix> Z;
+    vector<Matrix> A;
+};
+
+struct Backward
+{
+    vector<Matrix> dZ;
+    vector<Matrix> dW;
+    vector<Matrix> dB;
+};
+
+struct Activation
+{
+    Matrix(*forward)(const Matrix&);
+    Matrix(*derivate)(const Matrix&);
+
+    Activation(const string& name)
+    {
+        if (name == "relu")
+        {
+            forward = relu;
+            derivate = der_relu;
+        }
+        else if (name == "tanh")
+        {
+            forward = tanhM;
+            derivate = der_tanh;
+        }
+        else
+            throw runtime_error("Invalid activation type. Please choose 'relu' or 'tanh'");
+    }
+};
+
+struct NetworkConfig
+{
+    vector<int> dims;
+    Activation activation;
+
+    NetworkConfig(const vector<int>& dim_list, const string& activ_name) : dims(dim_list), activation(activ_name) {}
+};
 
 Matrix loadMatrixBins(const string& filepath, int rows, int cols)
 {
