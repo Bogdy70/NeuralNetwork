@@ -846,6 +846,37 @@ Parameters& optimizer(Parameters& params, const Backward& grads, const float lr)
     return params;
 }
 
+Parameters train(const Matrix& X_train,
+    const Matrix& X_test,
+    const Matrix& y_train,
+    const Matrix& y_test,
+    const vector<int>& dim_list,
+    const string& activation,
+    const float lr,
+    const int epochs)
+{
+    Parameters params = init_params(dim_list);
+
+    for (int epoch = 0; epoch < epochs; epoch++)
+    {
+        Forward frd_cache = forward_pass(params, X_train, activation);
+        float train_cost = cost(y_train, frd_cache.A[size(dim_list) - 1]);
+        float train_acc = accuracy(y_train, frd_cache.A[size(dim_list) - 1]);
+        Backward grads = backpropagation(frd_cache, params, y_train, activation);
+        optimizer(params, grads, lr);
+
+        if (epoch % 10 == 0)
+        {
+            frd_cache = forward_pass(params, X_test, activation);
+            float test_cost = cost(y_test, frd_cache.A[size(dim_list) - 1]);
+            float test_acc = accuracy(y_test, frd_cache.A[size(dim_list) - 1]);
+            cout << "Epoch: " << epoch << " || Train loss: " << train_cost << " || Test loss: " << test_cost << " || Train accuracy: " << train_acc * 100.0f << "% || Test accuracy: " << test_acc * 100.0f << "%\n";
+        }
+    }
+
+    return params;
+}
+
 int main()
 {
     try
@@ -1183,6 +1214,10 @@ int main()
             cout << "dW" << i << " shape: " << "(" << grads.dW[i].rows << ", " << grads.dW[i].cols << ")\n";
             cout << "dB" << i << " shape: " << "(" << grads.dB[i].rows << ", " << grads.dB[i].cols << ")\n\n";
         }
+
+        cout << "\n\nPutting it all together and training\n\n";
+
+        Parameters params1 = train(X_train_cat, X_test_cat, y_train_cat, y_test_cat, dim_list, "relu", 0.005f, 100);
     }
     catch (const exception& e)
     {
