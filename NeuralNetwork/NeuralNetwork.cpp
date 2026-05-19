@@ -13,6 +13,7 @@
 #include <filesystem>
 #include <stdexcept>
 #include "Backends.h"
+#include <omp.h>
 
 using namespace std;
 
@@ -382,7 +383,7 @@ int main()
             cout << "\n";
         }
 
-        Matrix mul = A.matmul(B);
+        Matrix mul = OpenMPBackend::matmul(A, B);
 
         cout << "\n\nMatrix multiplication\n\n";
 
@@ -644,7 +645,7 @@ int main()
 
         cout << "\n\nPutting it all together and training\n\n";
 
-        Parameters params1 = train<SequentialBackend>(X_train_cat, X_test_cat, y_train_cat, y_test_cat, dim_list, "relu", 0.005f, 100);
+        Parameters params1 = train<OpenMPBackend>(X_train_cat, X_test_cat, y_train_cat, y_test_cat, dim_list, "relu", 0.005f, 100);
 
         cout << "\n\nPrediction test\n\n";
 
@@ -655,12 +656,15 @@ int main()
             one_cat(i, 0) = X_test_cat(i, 0);
         }
 
-        frd_cache = forward_pass<SequentialBackend>(params1, one_cat, "relu");
+        frd_cache = forward_pass<OpenMPBackend>(params1, one_cat, "relu");
 
         pred = frd_cache.A[size(dim_list) - 1];
         float pred_label = pred(0, 7) > 0.5 ? 1 : 0;
 
         cout << "Truth: " <<y_test_cat(0, 7)<< " || Pred: " <<pred_label;
+
+        int threads = omp_get_max_threads();
+        cout << "\n\nMax OpenMP threads: " << threads << "\n";
     }
     catch (const exception& e)
     {
