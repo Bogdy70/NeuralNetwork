@@ -157,6 +157,7 @@
     <None Include="data\mnist\Y_train.bin" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Backends.h" />
     <ClInclude Include="Matrix.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

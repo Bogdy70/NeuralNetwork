@@ -12,20 +12,22 @@
 #include <chrono>
 #include <filesystem>
 #include <stdexcept>
-#include "Matrix.h"
+#include "Backends.h"
 
 using namespace std;
 
+template <typename Backend>
 Matrix sigmoid(const Matrix& A)
 {
-    return 1.0f / (1.0f + Matrix::expM((-1.0f) * A));
+    return 1.0f / (1.0f + Backend::expM((-1.0f) * A));
 }
 
+template <typename Backend>
 Matrix softmax(const Matrix& A)
 {
     Matrix C(A.getRows(), A.getCols());
-    Matrix exp_A = Matrix::expM(A);
-    Matrix sum_exp = Matrix::sum(exp_A, 0);
+    Matrix exp_A = Backend::expM(A);
+    Matrix sum_exp = Backend::sum(exp_A, 0);
 
     for (int i = 0; i < A.getCols(); i++)
     {
@@ -53,9 +55,10 @@ Matrix tanhM(const Matrix& A)
     return C;
 }
 
+template <typename Backend>
 Matrix der_tanh(const Matrix& A)
 {
-    return 1 - Matrix::powM(tanhM(A), 2);
+    return 1 - Backend::powM(tanhM(A), 2);
 }
 
 Matrix relu(const Matrix& A)
@@ -88,31 +91,33 @@ Matrix der_relu(const Matrix& A)
     return C;
 }
 
+template <typename Backend>
 float cost(const Matrix& Y, const Matrix& pred)
 {
     int m = Y.getCols();
     float epsilon = 1e-8f;
-    Matrix clippedPred = Matrix::clipM(pred, epsilon, 1.0f - epsilon);
+    Matrix clippedPred = Backend::clipM(pred, epsilon, 1.0f - epsilon);
 
     if (Y.getRows() > 1)
-        return (-1.0f / static_cast<float>(m)) * Matrix::sum(Y * Matrix::logM(clippedPred))(0, 0);
+        return (-1.0f / static_cast<float>(m)) * Backend::sum(Y * Backend::logM(clippedPred))(0, 0);
     else
-        return (-1.0f / static_cast<float>(m)) * Matrix::sum(Y * Matrix::logM(clippedPred) + (1 - Y) * Matrix::logM(1 - clippedPred))(0, 0);
+        return (-1.0f / static_cast<float>(m)) * Backend::sum(Y * Backend::logM(clippedPred) + (1 - Y) * Backend::logM(1 - clippedPred))(0, 0);
 }
 
+template <typename Backend>
 float accuracy(const Matrix& Y, const Matrix& pred)
 {
     if (Y.getRows() > 1)
     {
-        Matrix true_labels = Matrix::argmax(Y);
-        Matrix pred_labels = Matrix::argmax(pred);
+        Matrix true_labels = Backend::argmax(Y);
+        Matrix pred_labels = Backend::argmax(pred);
 
-        return Matrix::sum(true_labels == pred_labels)(0, 0) / static_cast<float>(Y.getCols());
+        return Backend::sum(Backend::equals(true_labels, pred_labels))(0, 0) / static_cast<float>(Y.getCols());
     }
     else
     {
-        Matrix pred_labels = pred > 0.5f;
-        return Matrix::sum(Y==pred_labels)(0, 0) / static_cast<float>(Y.getCols());
+        Matrix pred_labels = Backend::greaterth(pred, 0.5f);
+        return Backend::sum(Backend::equals(Y, pred_labels))(0, 0) / static_cast<float>(Y.getCols());
     }
 }
 
@@ -141,12 +146,13 @@ struct Backward
     Backward(int dim): dZ(dim), dW(dim), dB(dim) {}
 };
 
+template<typename Backend>
 struct Activation
 {
     Matrix(*forward)(const Matrix&);
     Matrix(*derivate)(const Matrix&);
 
-    Activation(): forward(), derivate() {}
+    Activation(): forward(nullptr), derivate(nullptr) {}
 
     Activation(const string& name)
     {
@@ -158,17 +164,18 @@ struct Activation
         else if (name == "tanh")
         {
             forward = tanhM;
-            derivate = der_tanh;
+            derivate = der_tanh<Backend>;
         }
         else
             throw runtime_error("Invalid activation type. Please choose 'relu' or 'tanh'");
     }
 };
 
+template <typename Backend>
 struct NetworkConfig
 {
     vector<int> dims;
-    Activation activation;
+    Activation<Backend> activation;
 
     NetworkConfig(const vector<int>& dim_list): dims(dim_list), activation() {}
 
@@ -193,6 +200,7 @@ void printMnistImage(const Matrix& img, int sample_idx)
     }
 }
 
+template<typename Backend>
 Parameters init_params(const vector<int>& dim_list)
 {
     int L = size(dim_list);
@@ -200,67 +208,71 @@ Parameters init_params(const vector<int>& dim_list)
 
     for (int l = 1; l < L; l++)
     {
-        params.W[l] = Matrix::random(dim_list[l], dim_list[l - 1]) * sqrt(2.0f / static_cast<float>(dim_list[l - 1]));
+        params.W[l] = Backend::scalarMul(Backend::random(dim_list[l], dim_list[l - 1]), sqrt(2.0f / static_cast<float>(dim_list[l - 1])));
         params.B[l] = Matrix(dim_list[l], 1);
     }
 
     return params;
 }
 
+template<typename Backend>
 Forward forward_pass(const Parameters& params, const Matrix& X, const string& activation)
 {
     int L = size(params.W);
     Forward forward_cache(L);
-    Activation activ(activation);
+    Activation<Backend> activ(activation);
     Matrix(*final_activ)(const Matrix&);
 
     forward_cache.A[0] = X;
 
     for (int l = 1; l < L-1; l++)
     {
-        forward_cache.Z[l] = params.W[l].matmul(forward_cache.A[l - 1]).broadcastAdd(params.B[l]);
+        forward_cache.Z[l] = Backend::broadcastAdd(Backend::matmul(params.W[l], forward_cache.A[l - 1]), params.B[l]);
         forward_cache.A[l] = activ.forward(forward_cache.Z[l]);
     }
-    forward_cache.Z[L-1] = params.W[L-1].matmul(forward_cache.A[L - 2]).broadcastAdd(params.B[L-1]);
-    final_activ = forward_cache.Z[L-1].getRows() > 1 ? softmax : sigmoid;
+    forward_cache.Z[L-1] = Backend::broadcastAdd(Backend::matmul(params.W[L-1], forward_cache.A[L - 2]), params.B[L-1]);
+    final_activ = forward_cache.Z[L-1].getRows() > 1 ? softmax<Backend> : sigmoid<Backend>;
     forward_cache.A[L-1] = final_activ(forward_cache.Z[L-1]);
 
     return forward_cache;
 }
 
+template<typename Backend>
 Backward backpropagation(const Forward& frd_cache, const Parameters& params, const Matrix& Y, const string& activation)
 {
     int L = size(frd_cache.A);
     int m = Y.getCols();
     Backward grads(L);
-    Activation activ(activation);
+    Activation<Backend> activ(activation);
 
-    grads.dZ[L - 1] = frd_cache.A[L - 1] - Y;
-    grads.dW[L - 1] = (1.0f / static_cast<float>(m)) * (grads.dZ[L - 1].matmul(frd_cache.A[L - 2].T()));
-    grads.dB[L - 1] = (1.0f / static_cast<float>(m)) * (Matrix::sum(grads.dZ[L - 1], 1));
+    grads.dZ[L - 1] = Backend::sub(frd_cache.A[L - 1], Y);
+    grads.dW[L - 1] =  Backend::scalarMul(Backend::matmul(grads.dZ[L - 1], Backend::T(frd_cache.A[L - 2])), (1.0f / static_cast<float>(m)));
+    grads.dB[L - 1] =  Backend::scalarMul(Backend::sum(grads.dZ[L - 1], 1), (1.0f / static_cast<float>(m)));
 
     for (int l = L - 2; l > 0; l--)
     {
-        grads.dZ[l] = (params.W[l + 1].T().matmul(grads.dZ[l + 1])) * activ.derivate(frd_cache.Z[l]);
-        grads.dW[l] = (1.0f / static_cast<float>(m)) * (grads.dZ[l].matmul(frd_cache.A[l - 1].T()));
-        grads.dB[l] = (1.0f / static_cast<float>(m)) * (Matrix::sum(grads.dZ[l], 1));
+        grads.dZ[l] = Backend::mul(Backend::matmul(Backend::T(params.W[l + 1]), grads.dZ[l + 1]), activ.derivate(frd_cache.Z[l]));
+        grads.dW[l] = Backend::scalarMul(Backend::matmul(grads.dZ[l], Backend::T(frd_cache.A[l - 1])), (1.0f / static_cast<float>(m)));
+        grads.dB[l] = Backend::scalarMul(Backend::sum(grads.dZ[l], 1), (1.0f / static_cast<float>(m)));
     }
 
     return grads;
 }
 
+template<typename Backend>
 Parameters& optimizer(Parameters& params, const Backward& grads, const float lr)
 {
     int L = size(params.W);
     for (int l = 1; l < L; l++)
     {
-        params.W[l] = params.W[l] - lr * grads.dW[l];
-        params.B[l] = params.B[l] - lr * grads.dB[l];
+        params.W[l] = Backend::sub(params.W[l], Backend::scalarMul(grads.dW[l], lr));
+        params.B[l] = Backend::sub(params.B[l], Backend::scalarMul(grads.dB[l], lr));
     }
 
     return params;
 }
 
+template<typename Backend>
 Parameters train(const Matrix& X_train,
     const Matrix& X_test,
     const Matrix& y_train,
@@ -270,21 +282,21 @@ Parameters train(const Matrix& X_train,
     const float lr,
     const int epochs)
 {
-    Parameters params = init_params(dim_list);
+    Parameters params = init_params<Backend>(dim_list);
 
     for (int epoch = 0; epoch < epochs; epoch++)
     {
-        Forward frd_cache = forward_pass(params, X_train, activation);
-        float train_cost = cost(y_train, frd_cache.A[size(dim_list) - 1]);
-        float train_acc = accuracy(y_train, frd_cache.A[size(dim_list) - 1]);
-        Backward grads = backpropagation(frd_cache, params, y_train, activation);
-        optimizer(params, grads, lr);
+        Forward frd_cache = forward_pass<Backend>(params, X_train, activation);
+        float train_cost = cost<Backend>(y_train, frd_cache.A[size(dim_list) - 1]);
+        float train_acc = accuracy<Backend>(y_train, frd_cache.A[size(dim_list) - 1]);
+        Backward grads = backpropagation<Backend>(frd_cache, params, y_train, activation);
+        optimizer<Backend>(params, grads, lr);
 
         if (epoch % 10 == 0)
         {
-            frd_cache = forward_pass(params, X_test, activation);
-            float test_cost = cost(y_test, frd_cache.A[size(dim_list) - 1]);
-            float test_acc = accuracy(y_test, frd_cache.A[size(dim_list) - 1]);
+            frd_cache = forward_pass<Backend>(params, X_test, activation);
+            float test_cost = cost<Backend>(y_test, frd_cache.A[size(dim_list) - 1]);
+            float test_acc = accuracy<Backend>(y_test, frd_cache.A[size(dim_list) - 1]);
             cout << "Epoch: " << epoch << " || Train loss: " << train_cost << " || Test loss: " << test_cost << " || Train accuracy: " << train_acc * 100.0f << "% || Test accuracy: " << test_acc * 100.0f << "%\n";
         }
     }
@@ -595,7 +607,7 @@ int main()
 
         cout << "\n\nParameter initialization test\n\n";
 
-        Parameters params = init_params(dim_list);
+        Parameters params = init_params<SequentialBackend>(dim_list);
 
         for (int i = 1; i < size(dim_list); i++)
         {
@@ -605,7 +617,7 @@ int main()
 
         cout << "\n\nForward pass test\n\n";
 
-        Forward frd_cache = forward_pass(params, X_train_cat, "relu");
+        Forward frd_cache = forward_pass<SequentialBackend>(params, X_train_cat, "relu");
 
         for (int i = 0; i < size(dim_list); i++)
         {
@@ -617,11 +629,11 @@ int main()
 
         cout << "\n\nSize of pred: " << "(" << pred_labels.getRows() << ", " << pred_labels.getCols() << ")";
         cout << "\n\nPred label: " << pred_labels(0, 101);
-        cout << "\n\nAccuracy: " << accuracy(y_train_cat, pred)*100<<"%";
+        cout << "\n\nAccuracy: " << accuracy<SequentialBackend>(y_train_cat, pred)*100<<"%";
 
         cout << "\n\nBackpropagation test\n\n";
 
-        Backward grads = backpropagation(frd_cache, params, y_train_cat, "relu");
+        Backward grads = backpropagation<SequentialBackend>(frd_cache, params, y_train_cat, "relu");
 
         for (int i = size(dim_list) - 1; i > 0; i--)
         {
@@ -632,7 +644,7 @@ int main()
 
         cout << "\n\nPutting it all together and training\n\n";
 
-        Parameters params1 = train(X_train_cat, X_test_cat, y_train_cat, y_test_cat, dim_list, "relu", 0.005f, 100);
+        Parameters params1 = train<SequentialBackend>(X_train_cat, X_test_cat, y_train_cat, y_test_cat, dim_list, "relu", 0.005f, 100);
 
         cout << "\n\nPrediction test\n\n";
 
@@ -643,7 +655,7 @@ int main()
             one_cat(i, 0) = X_test_cat(i, 0);
         }
 
-        frd_cache = forward_pass(params1, one_cat, "relu");
+        frd_cache = forward_pass<SequentialBackend>(params1, one_cat, "relu");
 
         pred = frd_cache.A[size(dim_list) - 1];
         float pred_label = pred(0, 7) > 0.5 ? 1 : 0;
