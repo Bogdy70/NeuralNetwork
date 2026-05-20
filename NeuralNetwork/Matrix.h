@@ -23,6 +23,10 @@ public:
 
     int getCols() const;
 
+    float* rawData();
+
+    const float* rawData() const;
+
     void setData(const std::vector<float>& X);
 
     int size() const;

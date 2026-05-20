@@ -383,7 +383,7 @@ int main()
             cout << "\n";
         }
 
-        Matrix mul = OpenMPBackend::matmul(A, B);
+        Matrix mul = CUDABackend::matmul(A, B);
 
         cout << "\n\nMatrix multiplication\n\n";
 
@@ -403,7 +403,7 @@ int main()
         A1.setData({ 2, 3, 4, 5 });
         B1.setData({ 2, 3, 4, 5 });
 
-        Matrix C1 = A1 * B1;
+        Matrix C1 = CUDABackend::mul(A1, B1);
 
         for (int i = 0; i < C1.getRows(); i++)
         {

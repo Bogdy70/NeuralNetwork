@@ -32,6 +32,16 @@ int Matrix::getCols() const
     return cols;
 }
 
+float* Matrix::rawData()
+{
+    return data.data();
+}
+
+const float* Matrix::rawData() const
+{
+    return data.data();
+}
+
 void Matrix::setData(const vector<float>& X)
 {
     if (X.size() != rows * cols)
