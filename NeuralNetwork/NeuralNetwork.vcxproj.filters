@@ -80,9 +80,6 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <CudaCompile Include="CUDABackend.cu">
-      <Filter>Source Files</Filter>
-    </CudaCompile>
     <CudaCompile Include="CMatrix.cu">
       <Filter>Source Files</Filter>
     </CudaCompile>

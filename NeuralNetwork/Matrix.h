@@ -2,6 +2,7 @@
 
 #include<vector>
 #include<string>
+#include "CMatrix.cuh"
 
 class Matrix
 {
@@ -30,6 +31,8 @@ public:
     void setData(const std::vector<float>& X);
 
     int size() const;
+
+    CMatrix toCUDA() const;
 
     void resize(int new_rows, int new_cols);
 

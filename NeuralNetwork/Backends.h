@@ -175,10 +175,3 @@ struct OpenMPBackend
 
     static Matrix clipM(const Matrix& A, float minValue, float maxValue);
 };
-
-struct CUDABackend
-{
-    static Matrix matmul(const Matrix& A, const Matrix& B);
-
-    static Matrix mul(const Matrix& A, const Matrix& B);
-};

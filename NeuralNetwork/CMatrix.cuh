@@ -1,4 +1,8 @@
+#pragma once
+
 #include <cuda_runtime.h>
+
+class Matrix;
 
 class CMatrix
 {
@@ -19,4 +23,30 @@ public:
 
 	CMatrix(CMatrix&& other) noexcept;
 	CMatrix& operator=(CMatrix&& other) noexcept;
+
+	int getRows() const;
+
+	int getCols() const;
+
+	int size() const;
+
+	float* rawData();
+
+	const float* rawData() const;
+
+	Matrix toCPU() const;
+
+	CMatrix matmul(const CMatrix& B) const;
+
+	CMatrix operator*(const CMatrix& B) const;
+
+	CMatrix operator*(float x) const;
+
+	CMatrix operator/(const CMatrix& B) const;
+
+	CMatrix operator/(float x) const;
+
+	CMatrix operator+(const CMatrix& B) const;
+
+	CMatrix operator+(float x) const;
 };

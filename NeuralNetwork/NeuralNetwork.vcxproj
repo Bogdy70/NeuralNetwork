@@ -139,6 +139,9 @@
     <Manifest>
       <EnableSegmentHeap>true</EnableSegmentHeap>
     </Manifest>
+    <CudaCompile>
+      <CodeGeneration>compute_89,sm_89;%(CodeGeneration)</CodeGeneration>
+    </CudaCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Matrix.cpp" />
@@ -166,7 +169,6 @@
   </ItemGroup>
   <ItemGroup>
     <CudaCompile Include="CMatrix.cu" />
-    <CudaCompile Include="CUDABackend.cu" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

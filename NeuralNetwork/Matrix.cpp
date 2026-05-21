@@ -54,6 +54,15 @@ int Matrix::size() const
     return rows * cols;
 }
 
+CMatrix Matrix::toCUDA() const
+{
+    CMatrix C(rows, cols);
+
+    cudaMemcpy(C.rawData(), data.data(), rows * cols * sizeof(float), cudaMemcpyHostToDevice);
+
+    return C;
+}
+
 void Matrix::resize(int new_rows, int new_cols)
 {
     rows = new_rows;

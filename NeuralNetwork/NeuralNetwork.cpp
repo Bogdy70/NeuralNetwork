@@ -305,6 +305,44 @@ Parameters train(const Matrix& X_train,
     return params;
 }
 
+struct CUDABackend
+{
+    static CMatrix matmul(const CMatrix& A, const CMatrix& B)
+    {
+        return A.matmul(B);
+    }
+
+    static CMatrix mul(const CMatrix& A, const CMatrix& B)
+    {
+        return A * B;
+    }
+
+    static CMatrix scalarMul(const CMatrix& A, float x)
+    {
+        return A * x;
+    }
+
+    static CMatrix div(const CMatrix& A, const CMatrix& B)
+    {
+        return A / B;
+    }
+
+    static CMatrix divScalar(const CMatrix& A, float x)
+    {
+        return A / x;
+    }
+
+    static CMatrix add(const CMatrix& A, const CMatrix& B)
+    {
+        return A + B;
+    }
+
+    static CMatrix scalarAdd(const CMatrix& A, float x)
+    {
+        return A + x;
+    }
+};
+
 int main()
 {
     try
@@ -383,7 +421,10 @@ int main()
             cout << "\n";
         }
 
-        Matrix mul = CUDABackend::matmul(A, B);
+        CMatrix d_A = A.toCUDA();
+        CMatrix d_B = B.toCUDA();
+
+        Matrix mul = CUDABackend::matmul(d_A, d_B).toCPU();
 
         cout << "\n\nMatrix multiplication\n\n";
 
@@ -403,7 +444,7 @@ int main()
         A1.setData({ 2, 3, 4, 5 });
         B1.setData({ 2, 3, 4, 5 });
 
-        Matrix C1 = CUDABackend::mul(A1, B1);
+        Matrix C1 = CUDABackend::mul(A1.toCUDA(), B1.toCUDA()).toCPU();
 
         for (int i = 0; i < C1.getRows(); i++)
         {
@@ -416,7 +457,7 @@ int main()
 
         cout << "\n\nMatrix multiplication with a scalar\n\n";
 
-        A1 = A1 * (-1);
+        A1 = CUDABackend::scalarMul(A1.toCUDA(), -1.0f).toCPU();
 
         for (int i = 0; i < A1.getRows(); i++)
         {
@@ -429,7 +470,7 @@ int main()
 
         cout << "\n\nMatrix element wise division\n\n";
 
-        Matrix C2 = A1 / B1;
+        Matrix C2 = CUDABackend::div(A1.toCUDA(), B1.toCUDA()).toCPU();
 
         for (int i = 0; i < C2.getRows(); i++)
         {
@@ -442,7 +483,7 @@ int main()
 
         cout << "\n\nMatrix division with scalar\n\n";
 
-        A1 = A1 / 5;
+        A1 = CUDABackend::divScalar(A1.toCUDA(), 5.0f).toCPU();
 
         for (int i = 0; i < A1.getRows(); i++)
         {
@@ -455,7 +496,7 @@ int main()
 
         cout << "\n\nMatrix element wise addition\n\n";
 
-        Matrix C3 = A1 + B1;
+        Matrix C3 = CUDABackend::add(A1.toCUDA(), B1.toCUDA()).toCPU();
 
         for (int i = 0; i < C3.getRows(); i++)
         {
@@ -468,7 +509,7 @@ int main()
 
         cout << "\n\nMatrix addition with a scalar\n\n";
 
-        A1 = A1 + 7;
+        A1 = CUDABackend::scalarAdd(A1.toCUDA(), 7.0f).toCPU();
 
         for (int i = 0; i < A1.getRows(); i++)
         {
@@ -665,6 +706,15 @@ int main()
 
         int threads = omp_get_max_threads();
         cout << "\n\nMax OpenMP threads: " << threads << "\n";
+
+        Matrix T(2, 3);
+
+        T.setData({ 1, 2, 2, 3, 7, 9 });
+
+        CMatrix d_T = T.toCUDA();
+        Matrix T2 = d_T.toCPU();
+
+        cout << "\n\nCUDA copy test: "<<Matrix::sum((T==T2))(0, 0);
     }
     catch (const exception& e)
     {
