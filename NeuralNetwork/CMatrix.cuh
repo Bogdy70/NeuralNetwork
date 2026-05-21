@@ -49,4 +49,18 @@ public:
 	CMatrix operator+(const CMatrix& B) const;
 
 	CMatrix operator+(float x) const;
+
+	CMatrix operator-(const CMatrix& B) const;
+
+	CMatrix operator-(float x) const;
+
+	CMatrix operator==(const CMatrix& B) const;
+
+	CMatrix operator>(float x) const;
+
+	CMatrix broadcastAdd(const CMatrix& B) const;
+
+	CMatrix T() const;
+
+	static CMatrix random(int rows, int cols);
 };

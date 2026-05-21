@@ -1,6 +1,10 @@
 #include "CMatrix.cuh"
 #include "Matrix.h"
 #include <stdexcept>
+#include <random>
+
+static std::random_device rd;
+static std::mt19937 gen(rd());
 
 CMatrix::CMatrix(): rows(0), cols(0), data(nullptr) {}
 
@@ -236,7 +240,7 @@ __global__ void addKernel(const float* A, const float* B, float* C, int N, int M
 CMatrix CMatrix::operator+(const CMatrix& B) const
 {
 	if (rows != B.getRows() || cols != B.getCols())
-		throw std::runtime_error("Invalid shape for element wise division");
+		throw std::runtime_error("Invalid shape for element wise addition");
 
 	CMatrix C(rows, cols);
 
@@ -267,6 +271,178 @@ CMatrix CMatrix::operator+(float x) const
 	dim3 grid((cols + block.x - 1) / block.x, (rows + block.y - 1) / block.y);
 
 	scalarAddKernel << <grid, block >> > (data, x, C.rawData(), rows, cols);
+
+	return C;
+}
+
+__global__ void subKernel(const float* A, const float* B, float* C, int N, int M)
+{
+	int i = blockIdx.y * blockDim.y + threadIdx.y;
+	int j = blockIdx.x * blockDim.x + threadIdx.x;
+
+	if (i < N && j < M)
+	{
+		C[i * M + j] = A[i * M + j] - B[i * M + j];
+	}
+}
+
+CMatrix CMatrix::operator-(const CMatrix& B) const
+{
+	if (rows != B.getRows() || cols != B.getCols())
+		throw std::runtime_error("Invalid shape for element wise substraction");
+
+	CMatrix C(rows, cols);
+
+	dim3 block(16, 16);
+	dim3 grid((cols + block.x - 1) / block.x, (rows + block.y - 1) / block.y);
+
+	subKernel << <grid, block >> > (data, B.rawData(), C.rawData(), rows, cols);
+
+	return C;
+}
+
+__global__ void subScalarKernel(const float* A, float x, float* C, int N, int M)
+{
+	int i = blockIdx.y * blockDim.y + threadIdx.y;
+	int j = blockIdx.x * blockDim.x + threadIdx.x;
+
+	if (i < N && j < M)
+	{
+		C[i * M + j] = A[i * M + j] - x;
+	}
+}
+
+CMatrix CMatrix::operator-(float x) const
+{
+	CMatrix C(rows, cols);
+
+	dim3 block(16, 16);
+	dim3 grid((cols + block.x - 1) / block.x, (rows + block.y - 1) / block.y);
+
+	subScalarKernel << <grid, block >> > (data, x, C.rawData(), rows, cols);
+
+	return C;
+}
+
+__global__ void equalsKernel(const float* A, const float* B, float* C, int N, int M)
+{
+	int i = blockIdx.y * blockDim.y + threadIdx.y;
+	int j = blockIdx.x * blockDim.x + threadIdx.x;
+
+	if (i < N && j < M)
+	{
+		C[i * M + j] = A[i * M + j] == B[i * M + j] ? 1.0f : 0.0f;
+	}
+}
+
+CMatrix CMatrix::operator==(const CMatrix& B) const
+{
+	if (rows != B.getRows() || cols != B.getCols())
+		throw std::runtime_error("Invalid shape for equality");
+
+	CMatrix C(rows, cols);
+
+	dim3 block(16, 16);
+	dim3 grid((cols + block.x - 1) / block.x, (rows + block.y - 1) / block.y);
+
+	equalsKernel << <grid, block >> > (data, B.rawData(), C.rawData(), rows, cols);
+
+	return C;
+}
+
+__global__ void greaterthKernel(const float* A, float x, float* C, int N, int M)
+{
+	int i = blockIdx.y * blockDim.y + threadIdx.y;
+	int j = blockIdx.x * blockDim.x + threadIdx.x;
+
+	if (i < N && j < M)
+	{
+		C[i * M + j] = A[i * M + j] > x ? 1.0f : 0.0f;
+	}
+}
+
+CMatrix CMatrix::operator>(float x) const
+{
+	CMatrix C(rows, cols);
+
+	dim3 block(16, 16);
+	dim3 grid((cols + block.x - 1) / block.x, (rows + block.y - 1) / block.y);
+
+	greaterthKernel << <grid, block >> > (data, x, C.rawData(), rows, cols);
+
+	return C;
+}
+
+__global__ void broadcastAddKernel(const float* A, const float* B, float* C, int N, int M)
+{
+	int i = blockIdx.y * blockDim.y + threadIdx.y;
+	int j = blockIdx.x * blockDim.x + threadIdx.x;
+
+	if (i < N && j < M)
+	{
+		C[i * M + j] = A[i * M + j] + B[i];
+	}
+}
+
+CMatrix CMatrix::broadcastAdd(const CMatrix& B) const
+{
+	if (rows != B.getRows())
+		throw std::runtime_error("Invalid shape for element broadcast addition");
+
+	CMatrix C(rows, cols);
+
+	dim3 block(16, 16);
+	dim3 grid((cols + block.x - 1) / block.x, (rows + block.y - 1) / block.y);
+
+	broadcastAddKernel << <grid, block >> > (data, B.rawData(), C.rawData(), rows, cols);
+
+	return C;
+}
+
+__global__ void TKernel(const float* A, float* C, int N, int M)
+{
+	int i = blockIdx.y * blockDim.y + threadIdx.y;
+	int j = blockIdx.x * blockDim.x + threadIdx.x;
+
+	if (i < N && j < M)
+	{
+		C[j * M + i] = A[i * M + j];
+	}
+}
+
+CMatrix CMatrix::T() const
+{
+	CMatrix C(rows, cols);
+
+	dim3 block(16, 16);
+	dim3 grid((cols + block.x - 1) / block.x, (rows + block.y - 1) / block.y);
+
+	TKernel << <grid, block >> > (data, C.rawData(), rows, cols);
+
+	return C;
+}
+
+__global__ void randKernel(int rows, int cols, float* C)
+{
+	std::normal_distribution<float> dist(0.0f, 1.0f);
+
+	int i = blockIdx.y * blockDim.y + threadIdx.y;
+	int j = blockIdx.x * blockDim.x + threadIdx.x;
+
+	if (i < rows && j < cols)
+	{
+		C[j * cols + i] = dist(gen);
+	}
+}
+
+CMatrix CMatrix::random(int rows, int cols)
+{
+	CMatrix C(rows, cols);
+
+	dim3 block(16, 16);
+	dim3 grid((cols + block.x - 1) / block.x, (rows + block.y - 1) / block.y);
+
+	randKernel << <grid, block >> > (rows, cols, C.rawData());
 
 	return C;
 }

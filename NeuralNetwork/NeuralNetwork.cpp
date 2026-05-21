@@ -341,6 +341,41 @@ struct CUDABackend
     {
         return A + x;
     }
+
+    static CMatrix sub(const CMatrix& A, const CMatrix& B)
+    {
+        return A - B;
+    }
+
+    static CMatrix subScalar(const CMatrix& A, float x)
+    {
+        return A - x;
+    }
+
+    static CMatrix equals(const CMatrix& A, const CMatrix& B)
+    {
+        return A == B;
+    }
+
+    static CMatrix greaterth(const CMatrix& A, float x)
+    {
+        return A > x;
+    }
+
+    static CMatrix broadcastAdd(const CMatrix& A, const CMatrix& B)
+    {
+        return A.broadcastAdd(B);
+    }
+
+    static CMatrix T(const CMatrix& A)
+    {
+        return A.T();
+    }
+
+    static CMatrix random(int rows, int cols)
+    {
+        return CMatrix::random(rows, cols);
+    }
 };
 
 int main()
@@ -525,7 +560,7 @@ int main()
         Matrix D(2, 1);
         D.setData({ 2, 3 });
 
-        A1 = A1.broadcastAdd(D);
+        A1 = CUDABackend::broadcastAdd(A1.toCUDA(), D.toCUDA()).toCPU();
 
         for (int i = 0; i < A1.getRows(); i++)
         {
@@ -538,7 +573,7 @@ int main()
 
         cout << "\n\nMatrix element wise substraction\n\n";
 
-        Matrix C4 = A1 - B1;
+        Matrix C4 = CUDABackend::sub(A1.toCUDA(), B1.toCUDA()).toCPU();
 
         for (int i = 0; i < C4.getRows(); i++)
         {
@@ -551,7 +586,7 @@ int main()
 
         cout << "\n\nMatrix substraction with a scalar\n\n";
 
-        A1 = A1 - 7;
+        A1 = CUDABackend::subScalar(A1.toCUDA(), 7.0f).toCPU();
 
         for (int i = 0; i < A1.getRows(); i++)
         {
@@ -564,7 +599,7 @@ int main()
 
         cout << "\n\nMatrix transpose\n\n";
 
-        A1 = A1.T();
+        A1 = CUDABackend::T(A1.toCUDA()).toCPU();
 
         for (int i = 0; i < A1.getRows(); i++)
         {
@@ -584,6 +619,19 @@ int main()
             for (int j = 0; j < C5.getCols(); j++)
             {
                 cout << C5(i, j) << " ";
+            }
+            cout << "\n";
+        }
+
+        cout << "\n\nRandom matrix generation\n\n";
+
+        Matrix C6 = CUDABackend::random(2, 3).toCPU();
+
+        for (int i = 0; i < C6.getRows(); i++)
+        {
+            for (int j = 0; j < C6.getCols(); j++)
+            {
+                cout << C6(i, j) << " ";
             }
             cout << "\n";
         }
