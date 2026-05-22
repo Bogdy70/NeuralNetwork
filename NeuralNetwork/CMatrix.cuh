@@ -75,4 +75,14 @@ public:
 	static CMatrix logM(const CMatrix& A);
 
 	static CMatrix maxA(const CMatrix& A, int axis = -1);
+
+	static CMatrix argmax(const CMatrix& A, int axis = 0);
+
+	static CMatrix clipM(const CMatrix& A, float minVal, float maxVal);
+
+	CMatrix clone() const;
 };
+
+CMatrix operator/(float x, const CMatrix& A);
+
+CMatrix operator-(float x, const CMatrix& A);

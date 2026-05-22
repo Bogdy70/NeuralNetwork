@@ -4,277 +4,303 @@
 
 struct SequentialBackend
 {
-    static Matrix matmul(const Matrix& A, const Matrix& B)
+    using Mat = Matrix;
+
+    static Mat matmul(const Mat& A, const Mat& B)
     {
         return A.matmul(B);
     }
 
-    static Matrix mul(const Matrix& A, const Matrix& B)
+    static Mat mul(const Mat& A, const Mat& B)
     {
         return A * B;
     }
 
-    static Matrix scalarMul(const Matrix& A, float x)
+    static Mat scalarMul(const Mat& A, float x)
     {
         return A * x;
     }
 
-    static Matrix div(const Matrix& A, const Matrix& B)
+    static Mat div(const Mat& A, const Mat& B)
     {
         return A / B;
     }
 
-    static Matrix divScalar(const Matrix& A, float x)
+    static Mat divScalar(const Mat& A, float x)
     {
         return A / x;
     }
 
-    static Matrix scalarDiv(float x, const Matrix& A)
+    static Mat scalarDiv(float x, const Mat& A)
     {
         return x / A;
     }
 
-    static Matrix add(const Matrix& A, const Matrix& B)
+    static Mat add(const Mat& A, const Mat& B)
     {
         return A + B;
     }
 
-    static Matrix scalarAdd(const Matrix& A, float x)
+    static Mat scalarAdd(const Mat& A, float x)
     {
         return A + x;
     }
 
-    static Matrix sub(const Matrix& A, const Matrix& B)
+    static Mat sub(const Mat& A, const Mat& B)
     {
         return A - B;
     }
 
-    static Matrix subScalar(const Matrix& A, float x)
+    static Mat subScalar(const Mat& A, float x)
     {
         return A - x;
     }
 
-    static Matrix scalarSub(float x, const Matrix& A)
+    static Mat scalarSub(float x, const Mat& A)
     {
         return x - A;
     }
 
-    static Matrix equals(const Matrix& A, const Matrix& B)
+    static Mat equals(const Mat& A, const Mat& B)
     {
         return A == B;
     }
 
-    static Matrix greaterth(const Matrix& A, float x)
+    static Mat greaterth(const Mat& A, float x)
     {
         return A > x;
     }
 
-    static Matrix broadcastAdd(const Matrix& A, const Matrix& B)
+    static Mat broadcastAdd(const Mat& A, const Mat& B)
     {
         return A.broadcastAdd(B);
     }
 
-    static Matrix T(const Matrix& A)
+    static Mat T(const Mat& A)
     {
         return A.T();
     }
 
-    static Matrix random(int rows, int cols)
+    static Mat random(int rows, int cols)
     {
-        return Matrix::random(rows, cols);
+        return Mat::random(rows, cols);
     }
 
-    static Matrix sum(const Matrix& A, int axis = -1)
+    static Mat sum(const Mat& A, int axis = -1)
     {
-        return Matrix::sum(A, axis);
+        return Mat::sum(A, axis);
     }
 
-    static Matrix powM(const Matrix& A, float power)
+    static Mat powM(const Mat& A, float power)
     {
-        return Matrix::powM(A, power);
+        return Mat::powM(A, power);
     }
 
-    static Matrix sqrtM(const Matrix& A)
+    static Mat sqrtM(const Mat& A)
     {
-        return Matrix::sqrtM(A);
+        return Mat::sqrtM(A);
     }
 
-    static Matrix expM(const Matrix& A)
+    static Mat expM(const Mat& A)
     {
-        return Matrix::expM(A);
+        return Mat::expM(A);
     }
 
-    static Matrix logM(const Matrix& A)
+    static Mat logM(const Mat& A)
     {
-        return Matrix::logM(A);
+        return Mat::logM(A);
     }
 
-    static Matrix maxM(const Matrix& A, int axis = -1)
+    static Mat maxM(const Mat& A, int axis = -1)
     {
-        return Matrix::maxM(A, axis);
+        return Mat::maxM(A, axis);
     }
 
-    static Matrix argmax(const Matrix& A, int axis = 0)
+    static Mat argmax(const Mat& A, int axis = 0)
     {
-        return Matrix::argmax(A, axis);
+        return Mat::argmax(A, axis);
     }
 
-    static Matrix clipM(const Matrix& A, float minValue, float maxValue)
+    static Mat clipM(const Mat& A, float minValue, float maxValue)
     {
-        return Matrix::clipM(A, minValue, maxValue);
+        return Mat::clipM(A, minValue, maxValue);
     }
 };
 
 struct OpenMPBackend
 {
-    static Matrix matmul(const Matrix& A, const Matrix& B);
+    using Mat = Matrix;
 
-    static Matrix mul(const Matrix& A, const Matrix& B);
+    static Mat matmul(const Mat& A, const Mat& B);
 
-    static Matrix scalarMul(const Matrix& A, float x);
+    static Mat mul(const Mat& A, const Mat& B);
 
-    static Matrix div(const Matrix& A, const Matrix& B);
+    static Mat scalarMul(const Mat& A, float x);
 
-    static Matrix divScalar(const Matrix& A, float x);
+    static Mat div(const Mat& A, const Mat& B);
 
-    static Matrix scalarDiv(float x, const Matrix& A);
+    static Mat divScalar(const Mat& A, float x);
 
-    static Matrix add(const Matrix& A, const Matrix& B);
+    static Mat scalarDiv(float x, const Mat& A);
 
-    static Matrix scalarAdd(const Matrix& A, float x);
+    static Mat add(const Mat& A, const Mat& B);
 
-    static Matrix sub(const Matrix& A, const Matrix& B);
+    static Mat scalarAdd(const Mat& A, float x);
 
-    static Matrix subScalar(const Matrix& A, float x);
+    static Mat sub(const Mat& A, const Mat& B);
 
-    static Matrix scalarSub(float x, const Matrix& A);
+    static Mat subScalar(const Mat& A, float x);
 
-    static Matrix equals(const Matrix& A, const Matrix& B);
+    static Mat scalarSub(float x, const Mat& A);
 
-    static Matrix greaterth(const Matrix& A, float x);
+    static Mat equals(const Mat& A, const Mat& B);
 
-    static Matrix broadcastAdd(const Matrix& A, const Matrix& B);
+    static Mat greaterth(const Mat& A, float x);
 
-    static Matrix T(const Matrix& A);
+    static Mat broadcastAdd(const Mat& A, const Mat& B);
 
-    static Matrix random(int rows, int cols);
+    static Mat T(const Mat& A);
 
-    static Matrix sum(const Matrix& A, int axis = -1);
+    static Mat random(int rows, int cols);
 
-    static Matrix powM(const Matrix& A, float power);
+    static Mat sum(const Mat& A, int axis = -1);
 
-    static Matrix sqrtM(const Matrix& A);
+    static Mat powM(const Mat& A, float power);
 
-    static Matrix expM(const Matrix& A);
+    static Mat sqrtM(const Mat& A);
 
-    static Matrix logM(const Matrix& A);
+    static Mat expM(const Mat& A);
 
-    static Matrix maxM(const Matrix& A, int axis = -1);
+    static Mat logM(const Mat& A);
 
-    static Matrix argmax(const Matrix& A, int axis = 0);
+    static Mat maxM(const Mat& A, int axis = -1);
 
-    static Matrix clipM(const Matrix& A, float minValue, float maxValue);
+    static Mat argmax(const Mat& A, int axis = 0);
+
+    static Mat clipM(const Mat& A, float minValue, float maxValue);
 };
 
 struct CUDABackend
 {
-    static CMatrix matmul(const CMatrix& A, const CMatrix& B)
+    using Mat = CMatrix;
+
+    static Mat matmul(const Mat& A, const Mat& B)
     {
         return A.matmul(B);
     }
 
-    static CMatrix mul(const CMatrix& A, const CMatrix& B)
+    static Mat mul(const Mat& A, const Mat& B)
     {
         return A * B;
     }
 
-    static CMatrix scalarMul(const CMatrix& A, float x)
+    static Mat scalarMul(const Mat& A, float x)
     {
         return A * x;
     }
 
-    static CMatrix div(const CMatrix& A, const CMatrix& B)
+    static Mat div(const Mat& A, const Mat& B)
     {
         return A / B;
     }
 
-    static CMatrix divScalar(const CMatrix& A, float x)
+    static Mat divScalar(const Mat& A, float x)
     {
         return A / x;
     }
 
-    static CMatrix add(const CMatrix& A, const CMatrix& B)
+    static Mat add(const Mat& A, const Mat& B)
     {
         return A + B;
     }
 
-    static CMatrix scalarAdd(const CMatrix& A, float x)
+    static Mat scalarAdd(const Mat& A, float x)
     {
         return A + x;
     }
 
-    static CMatrix sub(const CMatrix& A, const CMatrix& B)
+    static Mat sub(const Mat& A, const Mat& B)
     {
         return A - B;
     }
 
-    static CMatrix subScalar(const CMatrix& A, float x)
+    static Mat subScalar(const Mat& A, float x)
     {
         return A - x;
     }
 
-    static CMatrix equals(const CMatrix& A, const CMatrix& B)
+    static Mat equals(const Mat& A, const Mat& B)
     {
         return A == B;
     }
 
-    static CMatrix greaterth(const CMatrix& A, float x)
+    static Mat greaterth(const Mat& A, float x)
     {
         return A > x;
     }
 
-    static CMatrix broadcastAdd(const CMatrix& A, const CMatrix& B)
+    static Mat broadcastAdd(const Mat& A, const Mat& B)
     {
         return A.broadcastAdd(B);
     }
 
-    static CMatrix T(const CMatrix& A)
+    static Mat T(const Mat& A)
     {
         return A.T();
     }
 
-    static CMatrix random(int rows, int cols)
+    static Mat random(int rows, int cols)
     {
-        return CMatrix::random(rows, cols);
+        return Mat::random(rows, cols);
     }
 
-    static CMatrix sum(const CMatrix& A, int axis = -1)
+    static Mat sum(const Mat& A, int axis = -1)
     {
-        return CMatrix::sum(A, axis);
+        return Mat::sum(A, axis);
     }
 
-    static CMatrix powM(const CMatrix& A, float power)
+    static Mat powM(const Mat& A, float power)
     {
-        return CMatrix::powM(A, power);
+        return Mat::powM(A, power);
     }
 
-    static CMatrix sqrtM(const CMatrix& A)
+    static Mat sqrtM(const Mat& A)
     {
-        return CMatrix::sqrtM(A);
+        return Mat::sqrtM(A);
     }
 
-    static CMatrix expM(const CMatrix& A)
+    static Mat expM(const Mat& A)
     {
-        return CMatrix::expM(A);
+        return Mat::expM(A);
     }
 
-    static CMatrix logM(const CMatrix& A)
+    static Mat logM(const Mat& A)
     {
-        return CMatrix::logM(A);
+        return Mat::logM(A);
     }
 
-    static CMatrix maxA(const CMatrix& A, int axis = -1)
+    static Mat maxA(const Mat& A, int axis = -1)
     {
-        return CMatrix::maxA(A, axis);
+        return Mat::maxA(A, axis);
+    }
+
+    static Mat clipM(const Mat& A, float minVal, float maxVal)
+    {
+        return Mat::clipM(A, minVal, maxVal);
+    }
+
+    static Mat scalarDiv(float x, const Mat& A)
+    {
+        return x / A;
+    }
+
+    static Mat scalarSub(float x, const Mat& A)
+    {
+        return x - A;
+    }
+
+    static Mat clone(const Mat& A)
+    {
+        return A.clone();
     }
 };

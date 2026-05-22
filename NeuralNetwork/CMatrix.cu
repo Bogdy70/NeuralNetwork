@@ -746,3 +746,168 @@ CMatrix CMatrix::maxA(const CMatrix& A, int axis)
 	else
 		throw std::runtime_error("Invalid axis value. Please input -1, 0 or 1");
 }
+
+__global__ void argmax0Kernel(const float* A, float* C, int N, int M)
+{
+	int col = blockIdx.x * blockDim.x + threadIdx.x;
+
+	if (col < M)
+	{
+		int id = 0;
+		float maxA = A[col];
+
+		for (int i = 1; i < N; i++)
+		{
+			if (A[i * M + col] > maxA)
+			{
+				maxA = A[i * M + col];
+				id = i;
+			}
+		}
+
+		C[col] = id;
+	}
+}
+
+__global__ void argmax1Kernel(const float* A, float* C, int N, int M)
+{
+	int row = blockIdx.x * blockDim.x + threadIdx.x;
+
+	if (row < N)
+	{
+		int id = 0;
+		float maxA = A[row*M];
+
+		for (int j = 1; j < M; j++)
+		{
+			if (A[row * M + j] > maxA)
+			{
+				maxA = A[row * M + j];
+				id = j;
+			}
+		}
+
+		C[row] = id;
+	}
+}
+
+CMatrix CMatrix::argmax(const CMatrix& A, int axis)
+{
+	int rows = A.getRows();
+	int cols = A.getCols();
+	int block = 256;
+
+	if (axis == 0)
+	{
+		CMatrix C(1, cols);
+
+		int grid = (cols + block - 1) / block;
+
+		argmax0Kernel << <grid, block >> > (A.rawData(), C.rawData(), rows, cols);
+
+		return C;
+	}
+	else if (axis == 1)
+	{
+		CMatrix C(rows, 1);
+
+		int grid = (rows + block - 1) / block;
+
+		argmax1Kernel << <grid, block >> > (A.rawData(), C.rawData(), rows, cols);
+
+		return C;
+	}
+	else
+		throw std::runtime_error("Invalid axis value. Pleasse input 0 or 1");
+}
+
+__global__ void clipKernel(const float* A, float* C, int N, int M, float minVal, float maxVal)
+{
+	int i = blockIdx.y * blockDim.y + threadIdx.y;
+	int j = blockIdx.x * blockDim.x + threadIdx.x;
+
+	if (i < N && j < M)
+	{
+		if (A[i * M + j] > minVal)
+		{
+			if (A[i * M + j] < maxVal)
+			{
+				C[i * M + j] = A[i * M + j];
+			}
+			else
+				C[i * M + j] = maxVal;
+		}
+		else
+			C[i * M + j] = minVal;
+	}
+}
+
+CMatrix CMatrix::clipM(const CMatrix& A, float minVal, float maxVal)
+{
+	if (minVal > maxVal)
+		throw std::runtime_error("Min value cannot be bigger than the max value");
+
+	CMatrix C(A.getRows(), A.getCols());
+
+	dim3 block(16, 16);
+	dim3 grid((A.getCols() + block.x - 1) / block.x, (A.getRows() + block.y - 1) / block.y);
+
+	clipKernel << <grid, block >> > (A.rawData(), C.rawData(), A.getRows(), A.getCols(), minVal, maxVal);
+
+	return C;
+}
+
+__global__ void scalarDivKernel(const float* A, float* C, float x, int N, int M)
+{
+	int i = blockIdx.y * blockDim.y + threadIdx.y;
+	int j = blockIdx.x * blockDim.x + threadIdx.x;
+
+	if (i < N && j < M)
+	{
+		C[i * M + j] = x / A[i * M + j];
+	}
+}
+
+CMatrix operator/(float x, const CMatrix& A)
+{
+	CMatrix C(A.getRows(), A.getCols());
+
+	dim3 block(16, 16);
+	dim3 grid((A.getCols() + block.x - 1) / block.x, (A.getRows() + block.y - 1) / block.y);
+
+	scalarDivKernel << <grid, block >> > (A.rawData(), C.rawData(), x, A.getRows(), A.getCols());
+
+	return C;
+}
+
+__global__ void scalarSubKernel(const float* A, float* C, float x, int N, int M)
+{
+	int i = blockIdx.y * blockDim.y + threadIdx.y;
+	int j = blockIdx.x * blockDim.x + threadIdx.x;
+
+	if (i < N && j < M)
+	{
+		C[i * M + j] = x - A[i * M + j];
+	}
+}
+
+CMatrix operator-(float x, const CMatrix& A)
+{
+	CMatrix C(A.getRows(), A.getCols());
+
+	dim3 block(16, 16);
+	dim3 grid((A.getCols() + block.x - 1) / block.x, (A.getRows() + block.y - 1) / block.y);
+
+	scalarSubKernel << <grid, block >> > (A.rawData(), C.rawData(), x, A.getRows(), A.getCols());
+
+	return C;
+}
+
+CMatrix CMatrix::clone() const
+{
+	CMatrix C(rows, cols);
+
+	cudaMemcpy(C.rawData(), data, size() * sizeof(float), cudaMemcpyDeviceToDevice);
+
+	return C;
+}
