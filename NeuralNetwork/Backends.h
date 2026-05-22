@@ -175,3 +175,106 @@ struct OpenMPBackend
 
     static Matrix clipM(const Matrix& A, float minValue, float maxValue);
 };
+
+struct CUDABackend
+{
+    static CMatrix matmul(const CMatrix& A, const CMatrix& B)
+    {
+        return A.matmul(B);
+    }
+
+    static CMatrix mul(const CMatrix& A, const CMatrix& B)
+    {
+        return A * B;
+    }
+
+    static CMatrix scalarMul(const CMatrix& A, float x)
+    {
+        return A * x;
+    }
+
+    static CMatrix div(const CMatrix& A, const CMatrix& B)
+    {
+        return A / B;
+    }
+
+    static CMatrix divScalar(const CMatrix& A, float x)
+    {
+        return A / x;
+    }
+
+    static CMatrix add(const CMatrix& A, const CMatrix& B)
+    {
+        return A + B;
+    }
+
+    static CMatrix scalarAdd(const CMatrix& A, float x)
+    {
+        return A + x;
+    }
+
+    static CMatrix sub(const CMatrix& A, const CMatrix& B)
+    {
+        return A - B;
+    }
+
+    static CMatrix subScalar(const CMatrix& A, float x)
+    {
+        return A - x;
+    }
+
+    static CMatrix equals(const CMatrix& A, const CMatrix& B)
+    {
+        return A == B;
+    }
+
+    static CMatrix greaterth(const CMatrix& A, float x)
+    {
+        return A > x;
+    }
+
+    static CMatrix broadcastAdd(const CMatrix& A, const CMatrix& B)
+    {
+        return A.broadcastAdd(B);
+    }
+
+    static CMatrix T(const CMatrix& A)
+    {
+        return A.T();
+    }
+
+    static CMatrix random(int rows, int cols)
+    {
+        return CMatrix::random(rows, cols);
+    }
+
+    static CMatrix sum(const CMatrix& A, int axis = -1)
+    {
+        return CMatrix::sum(A, axis);
+    }
+
+    static CMatrix powM(const CMatrix& A, float power)
+    {
+        return CMatrix::powM(A, power);
+    }
+
+    static CMatrix sqrtM(const CMatrix& A)
+    {
+        return CMatrix::sqrtM(A);
+    }
+
+    static CMatrix expM(const CMatrix& A)
+    {
+        return CMatrix::expM(A);
+    }
+
+    static CMatrix logM(const CMatrix& A)
+    {
+        return CMatrix::logM(A);
+    }
+
+    static CMatrix maxA(const CMatrix& A, int axis = -1)
+    {
+        return CMatrix::maxA(A, axis);
+    }
+};

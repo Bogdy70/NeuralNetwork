@@ -422,27 +422,327 @@ CMatrix CMatrix::T() const
 	return C;
 }
 
-__global__ void randKernel(int rows, int cols, float* C)
+CMatrix CMatrix::random(int rows, int cols)
 {
-	std::normal_distribution<float> dist(0.0f, 1.0f);
+	Matrix R = Matrix::random(rows, cols);
 
-	int i = blockIdx.y * blockDim.y + threadIdx.y;
-	int j = blockIdx.x * blockDim.x + threadIdx.x;
+	return R.toCUDA();
+}
 
-	if (i < rows && j < cols)
+__global__ void sum0Kernel(const float* A, float* C, int N, int M)
+{
+	int col = blockIdx.x * blockDim.x + threadIdx.x;
+
+	if (col < M)
 	{
-		C[j * cols + i] = dist(gen);
+		float sum = 0.0f;
+
+		for (int i = 0; i < N; i++)
+		{
+			sum += A[i * M + col];
+		}
+		C[col] = sum;
 	}
 }
 
-CMatrix CMatrix::random(int rows, int cols)
+__global__ void sum1Kernel(const float* A, float* C, int N, int M)
 {
-	CMatrix C(rows, cols);
+	int row = blockIdx.x * blockDim.x + threadIdx.x;
+
+	if (row < N)
+	{
+		float sum = 0.0f;
+
+		for (int j = 0; j < M; j++)
+		{
+			sum += A[row * M + j];
+		}
+		C[row] = sum;
+	}
+}
+
+__global__ void sumallKernel(const float* A, float* C, int size)
+{
+	extern __shared__ float sh[];
+
+	int tid = threadIdx.x;
+	int idx = blockIdx.x * blockDim.x + threadIdx.x;
+
+	float val = 0.0f;
+
+	if (idx < size)
+		val = A[idx];
+
+	sh[tid] = val;
+	__syncthreads();
+
+	for (int stride = blockDim.x / 2; stride > 0; stride /= 2)
+	{
+		if (tid < stride)
+			sh[tid] += sh[tid + stride];
+
+		__syncthreads();
+	}
+
+	if (tid == 0)
+		atomicAdd(C, sh[0]);
+}
+
+CMatrix CMatrix::sum(const CMatrix& A, int axis)
+{
+
+	int rows = A.getRows();
+	int cols = A.getCols();
+	int block = 256;
+
+	if (axis == 0)
+	{
+		CMatrix C(1, cols);
+
+		int grid = (cols + block - 1) / block;
+
+		sum0Kernel << <grid, block >> > (A.rawData(), C.rawData(), rows, cols);
+
+		return C;
+	}
+	else if (axis == 1)
+	{
+		CMatrix C(rows, 1);
+
+		int grid = (rows + block - 1) / block;
+
+		sum1Kernel << <grid, block >> > (A.rawData(), C.rawData(), rows, cols);
+
+		return C;
+	}
+	else if (axis == -1)
+	{
+		CMatrix C(1, 1);
+
+		cudaMemset(C.rawData(), 0, sizeof(float));
+
+		int grid = (rows * cols + block - 1) / block;
+		int sharedBytes = block * sizeof(float);
+
+		sumallKernel << <grid, block, sharedBytes >> > (A.rawData(), C.rawData(), rows*cols);
+
+		return C;
+	}
+	else
+		throw std::runtime_error("Invalid axis value. Please choose -1, 0 or 1");
+}
+
+__global__ void powKernel(const float* A, float* C, int N, int M, float power)
+{
+	int i = blockIdx.y * blockDim.y + threadIdx.y;
+	int j = blockIdx.x * blockDim.x + threadIdx.x;
+
+	if (i < N && j < M)
+	{
+		C[i * M + j] = powf(A[i * M + j], power);
+	}
+}
+
+CMatrix CMatrix::powM(const CMatrix& A, float power)
+{
+	CMatrix C(A.getRows(), A.getCols());
 
 	dim3 block(16, 16);
-	dim3 grid((cols + block.x - 1) / block.x, (rows + block.y - 1) / block.y);
+	dim3 grid((A.getCols() + block.x - 1) / block.x, (A.getRows() + block.y - 1) / block.y);
 
-	randKernel << <grid, block >> > (rows, cols, C.rawData());
+	powKernel << <grid, block >> > (A.rawData(), C.rawData(), A.getRows(), A.getCols(), power);
 
 	return C;
+}
+
+__global__ void sqrtKernel(const float* A, float* C, int N, int M)
+{
+	int i = blockIdx.y * blockDim.y + threadIdx.y;
+	int j = blockIdx.x * blockDim.x + threadIdx.x;
+
+	if (i < N && j < M)
+	{
+		C[i * M + j] = sqrtf(A[i * M + j]);
+	}
+}
+
+CMatrix CMatrix::sqrtM(const CMatrix& A)
+{
+	CMatrix C(A.getRows(), A.getCols());
+
+	dim3 block(16, 16);
+	dim3 grid((A.getCols() + block.x - 1) / block.x, (A.getRows() + block.y - 1) / block.y);
+
+	sqrtKernel << <grid, block >> > (A.rawData(), C.rawData(), A.getRows(), A.getCols());
+
+	return C;
+}
+
+__global__ void expKernel(const float* A, float* C, int N, int M)
+{
+	int i = blockIdx.y * blockDim.y + threadIdx.y;
+	int j = blockIdx.x * blockDim.x + threadIdx.x;
+
+	if (i < N && j < M)
+	{
+		C[i * M + j] = expf(A[i * M + j]);
+	}
+}
+
+CMatrix CMatrix::expM(const CMatrix& A)
+{
+	CMatrix C(A.getRows(), A.getCols());
+
+	dim3 block(16, 16);
+	dim3 grid((A.getCols() + block.x - 1) / block.x, (A.getRows() + block.y - 1) / block.y);
+
+	expKernel << <grid, block >> > (A.rawData(), C.rawData(), A.getRows(), A.getCols());
+
+	return C;
+}
+
+__global__ void logKernel(const float* A, float* C, int N, int M)
+{
+	int i = blockIdx.y * blockDim.y + threadIdx.y;
+	int j = blockIdx.x * blockDim.x + threadIdx.x;
+
+	if (i < N && j < M)
+	{
+		C[i * M + j] = logf(A[i * M + j]);
+	}
+}
+
+CMatrix CMatrix::logM(const CMatrix& A)
+{
+	CMatrix C(A.getRows(), A.getCols());
+
+	dim3 block(16, 16);
+	dim3 grid((A.getCols() + block.x - 1) / block.x, (A.getRows() + block.y - 1) / block.y);
+
+	logKernel << <grid, block >> > (A.rawData(), C.rawData(), A.getRows(), A.getCols());
+
+	return C;
+}
+
+__global__ void max0Kernel(const float* A, float* C, int N, int M)
+{
+	int col = blockIdx.x * blockDim.x + threadIdx.x;
+
+	if (col < M)
+	{
+		float maxA = A[col];
+
+		for (int i = 1; i < N; i++)
+		{
+			if(A[i*M+col]>maxA)
+				maxA = A[i*M+col];
+		}
+
+		C[col] = maxA;
+	}
+}
+
+__global__ void max1Kernel(const float* A, float* C, int N, int M)
+{
+	int row = blockIdx.x * blockDim.x + threadIdx.x;
+
+	if (row < N)
+	{
+		float maxA = A[row*M];
+
+		for (int j = 1; j < M; j++)
+		{
+			if (A[row * M + j] > maxA)
+				maxA = A[row * M + j];
+		}
+
+		C[row] = maxA;
+	}
+}
+
+__global__ void maxallKernel(const float* A, float* partial, int size)
+{
+	extern __shared__ float sh[];
+
+	int tid = threadIdx.x;
+	int idx = blockIdx.x * blockDim.x + threadIdx.x;
+
+	float val = -FLT_MAX;
+
+	if (idx < size)
+		val = A[idx];
+
+	sh[tid] = val;
+	__syncthreads();
+
+	for (int stride = blockDim.x / 2; stride > 0; stride /= 2)
+	{
+		if (tid < stride && sh[tid + stride]>sh[tid])
+			sh[tid] = sh[tid + stride];
+
+		__syncthreads();
+	}
+
+	if (tid == 0)
+	{
+		partial[blockIdx.x] = sh[0];
+	}
+}
+
+CMatrix CMatrix::maxA(const CMatrix& A, int axis)
+{
+	int rows = A.getRows();
+	int cols = A.getCols();
+	int block = 256;
+
+	if (axis == 0)
+	{
+		CMatrix C(1, cols);
+
+		int grid = (cols + block - 1) / block;
+
+		max0Kernel << <grid, block >> > (A.rawData(), C.rawData(), rows, cols);
+
+		return C;
+	}
+	else if (axis == 1)
+	{
+		CMatrix C(rows, 1);
+
+		int grid = (rows + block - 1) / block;
+
+		max1Kernel << <grid, block >> > (A.rawData(), C.rawData(), rows, cols);
+
+		return C;
+	}
+	else if (axis == -1)
+	{
+		int grid = (rows * cols + block - 1) / block;
+		int sharedBytes = block * sizeof(float);
+
+		CMatrix partial(1, grid);
+
+		maxallKernel << <grid, block, sharedBytes >> > (A.rawData(), partial.rawData(), rows * cols);
+
+		cudaDeviceSynchronize();
+
+		int currentSize = grid;
+
+		while (currentSize > 1)
+		{
+			int nextGrid = (currentSize + block - 1) / block;
+			CMatrix next(1, nextGrid);
+
+			maxallKernel << <nextGrid, block, sharedBytes >> > (partial.rawData(), next.rawData(), currentSize);
+
+			cudaDeviceSynchronize();
+
+			currentSize = nextGrid;
+			partial = std::move(next);
+		}
+
+		return partial;
+	}
+	else
+		throw std::runtime_error("Invalid axis value. Please input -1, 0 or 1");
 }

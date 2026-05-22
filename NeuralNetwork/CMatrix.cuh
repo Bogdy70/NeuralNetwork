@@ -63,4 +63,16 @@ public:
 	CMatrix T() const;
 
 	static CMatrix random(int rows, int cols);
+
+	static CMatrix sum(const CMatrix& A, int axis = -1);
+
+	static CMatrix powM(const CMatrix& A, float power);
+
+	static CMatrix sqrtM(const CMatrix& A);
+
+	static CMatrix expM(const CMatrix& A);
+
+	static CMatrix logM(const CMatrix& A);
+
+	static CMatrix maxA(const CMatrix& A, int axis = -1);
 };

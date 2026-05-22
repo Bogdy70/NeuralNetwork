@@ -305,79 +305,6 @@ Parameters train(const Matrix& X_train,
     return params;
 }
 
-struct CUDABackend
-{
-    static CMatrix matmul(const CMatrix& A, const CMatrix& B)
-    {
-        return A.matmul(B);
-    }
-
-    static CMatrix mul(const CMatrix& A, const CMatrix& B)
-    {
-        return A * B;
-    }
-
-    static CMatrix scalarMul(const CMatrix& A, float x)
-    {
-        return A * x;
-    }
-
-    static CMatrix div(const CMatrix& A, const CMatrix& B)
-    {
-        return A / B;
-    }
-
-    static CMatrix divScalar(const CMatrix& A, float x)
-    {
-        return A / x;
-    }
-
-    static CMatrix add(const CMatrix& A, const CMatrix& B)
-    {
-        return A + B;
-    }
-
-    static CMatrix scalarAdd(const CMatrix& A, float x)
-    {
-        return A + x;
-    }
-
-    static CMatrix sub(const CMatrix& A, const CMatrix& B)
-    {
-        return A - B;
-    }
-
-    static CMatrix subScalar(const CMatrix& A, float x)
-    {
-        return A - x;
-    }
-
-    static CMatrix equals(const CMatrix& A, const CMatrix& B)
-    {
-        return A == B;
-    }
-
-    static CMatrix greaterth(const CMatrix& A, float x)
-    {
-        return A > x;
-    }
-
-    static CMatrix broadcastAdd(const CMatrix& A, const CMatrix& B)
-    {
-        return A.broadcastAdd(B);
-    }
-
-    static CMatrix T(const CMatrix& A)
-    {
-        return A.T();
-    }
-
-    static CMatrix random(int rows, int cols)
-    {
-        return CMatrix::random(rows, cols);
-    }
-};
-
 int main()
 {
     try
@@ -638,9 +565,9 @@ int main()
 
         cout << "\n\nMatrix axis sumation\n\n";
 
-        Matrix S1 = Matrix::sum(A, 0); //row sumation (1, 2)
-        Matrix S2 = Matrix::sum(A, 1); //colums sumation (3, 1)
-        Matrix S3 = Matrix::sum(A); //sum all (1, 1)
+        Matrix S1 = CMatrix::sum(A.toCUDA(), 0).toCPU(); //row sumation (1, 2)
+        Matrix S2 = CMatrix::sum(A.toCUDA(), 1).toCPU(); //colums sumation (3, 1)
+        Matrix S3 = CMatrix::sum(A.toCUDA()).toCPU(); //sum all (1, 1)
 
         for (int i = 0; i < A.getRows(); i++)
         {
@@ -683,6 +610,11 @@ int main()
             }
             cout << "\n";
         }
+
+        cout << "\n\nMatrix total max value\n\n";
+
+        float maxt = CMatrix::maxA(A1.toCUDA()).toCPU()(0, 0);
+        cout << maxt;
 
         cout << "\n\nNetwork config\n\n";
 
