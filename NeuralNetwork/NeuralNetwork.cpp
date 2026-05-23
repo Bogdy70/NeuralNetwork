@@ -232,7 +232,8 @@ Parameters<Backend> train(const typename Backend::Mat& X_train,
     const vector<int>& dim_list,
     const string& activation,
     const float lr,
-    const int epochs)
+    const int epochs,
+    const int viewing_rate)
 {
     Parameters<Backend> params = init_params<Backend>(dim_list);
 
@@ -244,7 +245,7 @@ Parameters<Backend> train(const typename Backend::Mat& X_train,
         Backward<Backend> grads = backpropagation<Backend>(frd_cache, params, y_train, activation);
         optimizer<Backend>(params, grads, lr);
 
-        if (epoch % 100 == 0)
+        if (epoch % viewing_rate == 0)
         {
             frd_cache = forward_pass<Backend>(params, X_test, activation);
             float test_cost = cost<Backend>(y_test, frd_cache.A[size(dim_list) - 1]);
@@ -285,6 +286,65 @@ void debug_accuracy_parts(const typename Backend::Mat& Y,
     for (int i = 0; i < min(10, correct_cpu.getCols()); i++)
         cout << correct_cpu(0, i) << " ";
     cout << "\n";
+}
+
+template <typename Backend>
+void predict(const Matrix& X_test, const Matrix& y_test, const Parameters<Backend>& params, const string& activation, int imgIdx)
+{
+    Matrix one_mnist(X_test.getRows(), 1);
+
+    for (int i = 0; i < X_test.getRows(); i++)
+    {
+        one_mnist(i, 0) = X_test(i, imgIdx);
+    }
+
+    Matrix one_mnisty(y_test.getRows(), 1);
+
+    for (int i = 0; i < y_test.getRows(); i++)
+    {
+        one_mnisty(i, 0) = y_test(i, imgIdx);
+    }
+
+    int L = static_cast<int>(params.W.size());
+
+    int pred_label = 0;
+
+    if (y_test.getRows() > 1)
+    {
+        if constexpr (std::is_same_v<Backend, CUDABackend>)
+        {
+            Forward<Backend> frd_cache1 = forward_pass<Backend>(params, one_mnist.toCUDA(), activation);
+
+            pred_label = Backend::toScalar(Backend::argmax(frd_cache1.A[L - 1]));
+        }
+        else
+        {
+            Forward<Backend> frd_cache1 = forward_pass<Backend>(params, one_mnist, activation);
+
+            pred_label = Backend::toScalar(Backend::argmax(frd_cache1.A[L - 1]));
+        }
+
+        int truth_label = Matrix::argmax(one_mnisty)(0, 0);
+
+        cout << "Truth: " << truth_label << " || Pred: " << pred_label;
+    }
+    else
+    {
+        if constexpr (std::is_same_v<Backend, CUDABackend>)
+        {
+            Forward<Backend> frd_cache1 = forward_pass<Backend>(params, one_mnist.toCUDA(), activation);
+
+            pred_label = Backend::greaterth(frd_cache1.A[L - 1], 0.5f).toCPU()(0, imgIdx);
+        }
+        else
+        {
+            Forward<Backend> frd_cache1 = forward_pass<Backend>(params, one_mnist, activation);
+
+            pred_label = Backend::greaterth(frd_cache1.A[L - 1], 0.5f)(0, imgIdx);
+        }
+
+        cout << "Truth: " << y_test(0, imgIdx) << " || Pred: " << pred_label;
+    }
 }
 
 int main()
@@ -665,46 +725,13 @@ int main()
 
         cout << logged(0, 0) << " " << logged(0, 1) << "\n";
 
-        dim_list = { X_train_mnist.getRows(), 100, 100, 200, y_train_mnist.getRows() };
+        dim_list = { X_train_cat.getRows(), 100, 100, 200, y_train_cat.getRows() };
 
-        Parameters<CUDABackend> params1 = train<CUDABackend>(X_train_mnist.toCUDA(), X_test_mnist.toCUDA(), y_train_mnist.toCUDA(), y_test_mnist.toCUDA(), dim_list, "relu", 0.001f, 1500);
+        Parameters<CUDABackend> params1 = train<CUDABackend>(X_train_cat.toCUDA(), X_test_cat.toCUDA(), y_train_cat.toCUDA(), y_test_cat.toCUDA(), dim_list, "relu", 0.005f, 100, 10);
 
         cout << "\n\nPrediction test\n\n";
 
-        Matrix one_cat(X_test_cat.getRows(), 1);
-
-        for (int i = 0; i < X_test_cat.getRows(); i++)
-        {
-            one_cat(i, 0) = X_test_cat(i, 0);
-        }
-
-        Matrix one_mnist(X_test_mnist.getRows(), 1);
-
-        for (int i = 0; i < X_test_mnist.getRows(); i++)
-        {
-            one_mnist(i, 0) = X_test_mnist(i, 7);
-        }
-
-        Matrix one_mnisty(y_test_mnist.getRows(), 1);
-
-        for (int i = 0; i < y_test_mnist.getRows(); i++)
-        {
-            one_mnisty(i, 0) = y_test_mnist(i, 7);
-        }
-
-        Forward<CUDABackend> frd_cache1 = forward_pass<CUDABackend>(params1, one_mnist.toCUDA(), "relu");
-
-        int pred_label = CUDABackend::toScalar(CUDABackend::argmax(frd_cache1.A[size(dim_list) - 1]));
-        int truth_label = Matrix::argmax(one_mnisty)(0, 0);
-
-        cout << "Truth: " << truth_label <<" || Pred: " << pred_label;
-
-        /*Forward<CUDABackend> frd_cache1 = forward_pass<CUDABackend>(params1, one_cat.toCUDA(), "relu");
-
-        pred = frd_cache1.A[size(dim_list) - 1].toCPU();
-        float pred_label = pred(0, 7) > 0.5 ? 1 : 0;
-
-        cout << "Truth: " <<y_test_cat(0, 7)<< " || Pred: " <<pred_label;*/
+        predict<CUDABackend>(X_test_cat, y_test_cat, params1, "relu", 7);
 
         int threads = omp_get_max_threads();
         cout << "\n\nMax OpenMP threads: " << threads << "\n";
