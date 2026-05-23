@@ -674,9 +674,7 @@ float Matrix::toScalar() const
     if (rows != 1 || cols != 1)
         throw runtime_error("Invalid shape for scalar matrix");
 
-    Matrix C(rows, cols);
-
-    return C(0, 0);
+    return data[0];
 }
 
 Matrix operator*(float x, const Matrix& A)

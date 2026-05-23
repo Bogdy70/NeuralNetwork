@@ -257,37 +257,6 @@ Parameters<Backend> train(const typename Backend::Mat& X_train,
     return params;
 }
 
-template<typename Backend>
-void debug_accuracy_parts(const typename Backend::Mat& Y,
-    const typename Backend::Mat& pred)
-{
-    using Mat = typename Backend::Mat;
-
-    Mat pred_labels = Backend::greaterth(pred, 0.5f);
-    Mat correct = Backend::equals(Y, pred_labels);
-    Mat correct_sum = Backend::sum(correct, -1);
-
-    Matrix pred_cpu = pred.toCPU();
-    Matrix labels_cpu = pred_labels.toCPU();
-    Matrix correct_cpu = correct.toCPU();
-    Matrix sum_cpu = correct_sum.toCPU();
-
-    cout << "pred shape: (" << pred.getRows() << ", " << pred.getCols() << ")\n";
-    cout << "correct shape: (" << correct.getRows() << ", " << correct.getCols() << ")\n";
-    cout << "sum shape: (" << correct_sum.getRows() << ", " << correct_sum.getCols() << ")\n";
-    cout << "correct sum: " << sum_cpu(0, 0) << "\n";
-
-    cout << "first 10 pred labels: ";
-    for (int i = 0; i < min(10, labels_cpu.getCols()); i++)
-        cout << labels_cpu(0, i) << " ";
-    cout << "\n";
-
-    cout << "first 10 correct: ";
-    for (int i = 0; i < min(10, correct_cpu.getCols()); i++)
-        cout << correct_cpu(0, i) << " ";
-    cout << "\n";
-}
-
 template <typename Backend>
 void predict(const Matrix& X_test, const Matrix& y_test, const Parameters<Backend>& params, const string& activation, int imgIdx)
 {
@@ -326,7 +295,9 @@ void predict(const Matrix& X_test, const Matrix& y_test, const Parameters<Backen
 
         int truth_label = Matrix::argmax(one_mnisty)(0, 0);
 
-        cout << "Truth: " << truth_label << " || Pred: " << pred_label;
+        cout << "\nTruth: " << truth_label << " || Pred: " << pred_label;
+
+        printMnistImage(X_test, imgIdx);
     }
     else
     {
@@ -343,7 +314,7 @@ void predict(const Matrix& X_test, const Matrix& y_test, const Parameters<Backen
             pred_label = Backend::greaterth(frd_cache1.A[L - 1], 0.5f)(0, imgIdx);
         }
 
-        cout << "Truth: " << y_test(0, imgIdx) << " || Pred: " << pred_label;
+        cout << "\nTruth: " << y_test(0, imgIdx) << " || Pred: " << pred_label;
     }
 }
 
@@ -377,391 +348,111 @@ int main()
         cout << "y_train_mnist: (" << y_train_mnist.getRows() << ", " << y_train_mnist.getCols() << ")\n";
 
         cout << "X_test_mnist: (" << X_test_mnist.getRows() << ", " << X_test_mnist.getCols() << ")\n";
-        cout << "y_test_mnist: (" << y_test_mnist.getRows() << ", " << y_test_mnist.getCols() << ")\n";
+        cout << "y_test_mnist: (" << y_test_mnist.getRows() << ", " << y_test_mnist.getCols() << ")\n\n";
 
-        cout << "\nFirst X_train_cat examples\n";
-        for (int i = 0; i < 10; i++)
-        {
-            cout << X_train_cat(i, 0) << " ";
-        }
 
-        cout << "\n\nFirst y_train_cat value\n";
-        cout << y_train_cat(0, 0) << "\n";
 
-        cout << "\nFirst one hot encoded labels vector y_train_mnist\n";
-        for (int i = 0; i < 10; i++)
-        {
-            cout << y_train_mnist(i, 0) << " ";
-        }
-
-        cout << "\n\nFirst mnist image number";
-
-        printMnistImage(X_train_mnist, 0);
-
-        Matrix A(3, 2), B(2, 4);
-
-        A.setData({ 2, 3, 6, 7, 9, 10 });
-        B.setData({ 12, 16, 8, 9, 5, 2, 10, 1 });
-
-        cout << "\n\nMatrix struct example\n\n";
-
-        for (int i = 0; i < A.getRows(); i++)
-        {
-            for (int j = 0; j < A.getCols(); j++)
-            {
-                cout << A(i, j) << " ";
-            }
-            cout << "\n";
-        }
-
-        cout << "\n";
-
-        for (int i = 0; i < B.getRows(); i++)
-        {
-            for (int j = 0; j < B.getCols(); j++)
-            {
-                cout << B(i, j) << " ";
-            }
-            cout << "\n";
-        }
-
-        CMatrix d_A = A.toCUDA();
-        CMatrix d_B = B.toCUDA();
-
-        Matrix mul = CUDABackend::matmul(d_A, d_B).toCPU();
-
-        cout << "\n\nMatrix multiplication\n\n";
-
-        for (int i = 0; i < mul.getRows(); i++)
-        {
-            for (int j = 0; j < mul.getCols(); j++)
-            {
-                cout << mul(i, j) << " ";
-            }
-            cout << "\n";
-        }
-
-        cout << "\n\nMatrix element wise multiplication\n\n";
-
-        Matrix A1(2, 2), B1(2, 2);
-
-        A1.setData({ 2, 3, 4, 5 });
-        B1.setData({ 2, 3, 4, 5 });
-
-        Matrix C1 = CUDABackend::mul(A1.toCUDA(), B1.toCUDA()).toCPU();
-
-        for (int i = 0; i < C1.getRows(); i++)
-        {
-            for (int j = 0; j < C1.getCols(); j++)
-            {
-                cout << C1(i, j) << " ";
-            }
-            cout << "\n";
-        }
-
-        cout << "\n\nMatrix multiplication with a scalar\n\n";
-
-        A1 = CUDABackend::scalarMul(A1.toCUDA(), -1.0f).toCPU();
-
-        for (int i = 0; i < A1.getRows(); i++)
-        {
-            for (int j = 0; j < A1.getCols(); j++)
-            {
-                cout << A1(i, j) << " ";
-            }
-            cout << "\n";
-        }
-
-        cout << "\n\nMatrix element wise division\n\n";
-
-        Matrix C2 = CUDABackend::div(A1.toCUDA(), B1.toCUDA()).toCPU();
-
-        for (int i = 0; i < C2.getRows(); i++)
-        {
-            for (int j = 0; j < C2.getCols(); j++)
-            {
-                cout << C2(i, j) << " ";
-            }
-            cout << "\n";
-        }
-
-        cout << "\n\nMatrix division with scalar\n\n";
-
-        A1 = CUDABackend::divScalar(A1.toCUDA(), 5.0f).toCPU();
-
-        for (int i = 0; i < A1.getRows(); i++)
-        {
-            for (int j = 0; j < A1.getCols(); j++)
-            {
-                cout << A1(i, j) << " ";
-            }
-            cout << "\n";
-        }
-
-        cout << "\n\nMatrix element wise addition\n\n";
-
-        Matrix C3 = CUDABackend::add(A1.toCUDA(), B1.toCUDA()).toCPU();
-
-        for (int i = 0; i < C3.getRows(); i++)
-        {
-            for (int j = 0; j < C3.getCols(); j++)
-            {
-                cout << C3(i, j) << " ";
-            }
-            cout << "\n";
-        }
-
-        cout << "\n\nMatrix addition with a scalar\n\n";
-
-        A1 = CUDABackend::scalarAdd(A1.toCUDA(), 7.0f).toCPU();
-
-        for (int i = 0; i < A1.getRows(); i++)
-        {
-            for (int j = 0; j < A1.getCols(); j++)
-            {
-                cout << A1(i, j) << " ";
-            }
-            cout << "\n";
-        }
-
-        cout << "\n\nMatrix addition with broadcasting\n\n";
-
-        Matrix D(2, 1);
-        D.setData({ 2, 3 });
-
-        A1 = CUDABackend::broadcastAdd(A1.toCUDA(), D.toCUDA()).toCPU();
-
-        for (int i = 0; i < A1.getRows(); i++)
-        {
-            for (int j = 0; j < A1.getCols(); j++)
-            {
-                cout << A1(i, j) << " ";
-            }
-            cout << "\n";
-        }
-
-        cout << "\n\nMatrix element wise substraction\n\n";
-
-        Matrix C4 = CUDABackend::sub(A1.toCUDA(), B1.toCUDA()).toCPU();
-
-        for (int i = 0; i < C4.getRows(); i++)
-        {
-            for (int j = 0; j < C4.getCols(); j++)
-            {
-                cout << C4(i, j) << " ";
-            }
-            cout << "\n";
-        }
-
-        cout << "\n\nMatrix substraction with a scalar\n\n";
-
-        A1 = CUDABackend::subScalar(A1.toCUDA(), 7.0f).toCPU();
-
-        for (int i = 0; i < A1.getRows(); i++)
-        {
-            for (int j = 0; j < A1.getCols(); j++)
-            {
-                cout << A1(i, j) << " ";
-            }
-            cout << "\n";
-        }
-
-        cout << "\n\nMatrix transpose\n\n";
-
-        A1 = CUDABackend::T(A1.toCUDA()).toCPU();
-
-        for (int i = 0; i < A1.getRows(); i++)
-        {
-            for (int j = 0; j < A1.getCols(); j++)
-            {
-                cout << A1(i, j) << " ";
-            }
-            cout << "\n";
-        }
-
-        cout << "\n\nMatrix operation chaining\n\n";
-
-        Matrix C5 = (A1 * B1) + A1;
-
-        for (int i = 0; i < C5.getRows(); i++)
-        {
-            for (int j = 0; j < C5.getCols(); j++)
-            {
-                cout << C5(i, j) << " ";
-            }
-            cout << "\n";
-        }
-
-        cout << "\n\nRandom matrix generation\n\n";
-
-        Matrix C6 = CUDABackend::random(2, 3).toCPU();
-
-        for (int i = 0; i < C6.getRows(); i++)
-        {
-            for (int j = 0; j < C6.getCols(); j++)
-            {
-                cout << C6(i, j) << " ";
-            }
-            cout << "\n";
-        }
-
-        cout << "\n\nMatrix axis sumation\n\n";
-
-        Matrix S1 = CMatrix::sum(A.toCUDA(), 0).toCPU(); //row sumation (1, 2)
-        Matrix S2 = CMatrix::sum(A.toCUDA(), 1).toCPU(); //colums sumation (3, 1)
-        Matrix S3 = CMatrix::sum(A.toCUDA()).toCPU(); //sum all (1, 1)
-
-        for (int i = 0; i < A.getRows(); i++)
-        {
-            for (int j = 0; j < A.getCols(); j++)
-            {
-                cout << A(i, j) << " ";
-            }
-            cout << "\n";
-        }
-
-        cout << "\n\n";
-
-        for (int i = 0; i < S1.getRows(); i++)
-        {
-            for (int j = 0; j < S1.getCols(); j++)
-            {
-                cout << S1(i, j) << " ";
-            }
-            cout << "\n";
-        }
-
-        cout << "\n\n";
-
-        for (int i = 0; i < S2.getRows(); i++)
-        {
-            for (int j = 0; j < S2.getCols(); j++)
-            {
-                cout << S2(i, j) << " ";
-            }
-            cout << "\n";
-        }
-
-        cout << "\n\n";
-
-        for (int i = 0; i < S3.getRows(); i++)
-        {
-            for (int j = 0; j < S3.getCols(); j++)
-            {
-                cout << S3(i, j) << " ";
-            }
-            cout << "\n";
-        }
-
-        cout << "\n\nMatrix total max value\n\n";
-
-        float maxt = CMatrix::maxA(A1.toCUDA()).toCPU()(0, 0);
-        cout << maxt;
-
-        cout << "\n\nNetwork config\n\n";
+        cout << "Sequential cat dataset test\n\n";
 
         vector<int> dim_list = { X_train_cat.getRows(), 100, 100, 200, y_train_cat.getRows() };
 
-        for (int i = 0; i < size(dim_list); i++)
-        {
-            cout << dim_list[i] << " ";
-        }
+        auto start = std::chrono::high_resolution_clock::now();
 
-        cout <<"\nSize of dimensions list: " << size(dim_list);
+        Parameters<SequentialBackend> params1 = train<SequentialBackend>(X_train_cat, X_test_cat, y_train_cat, y_test_cat, dim_list, "tanh", 0.005f, 100, 10);
 
-        cout << "\n\nParameter initialization test\n\n";
+        auto end = std::chrono::high_resolution_clock::now();
 
-        Parameters<CUDABackend> params = init_params<CUDABackend>(dim_list);
+        std::chrono::duration<double> elapsed = end - start;
 
-        for (int i = 1; i < size(dim_list); i++)
-        {
-            cout << "W" << i << " shape: " << "(" << params.W[i].getRows() << ", " << params.W[i].getCols() << ")\n";
-            cout << "B" << i << " shape: " << "(" << params.B[i].getRows() << ", " << params.B[i].getCols() << ")\n";
-        }
+        cout << "\nSequential cat training time: " << elapsed.count() << " seconds\n";
 
-        cout << "\n\nForward pass test\n\n";
+        predict<SequentialBackend>(X_test_cat, y_test_cat, params1, "tanh", 7);
 
-        Forward<CUDABackend> frd_cache2 = forward_pass<CUDABackend>(params, X_train_cat.toCUDA(), "relu");
+        
 
-        for (int i = 0; i < size(dim_list); i++)
-        {
-            cout << "A" << i << " shape: " << "(" << frd_cache2.A[i].getRows() << ", " << frd_cache2.A[i].getCols() << ")\n";
-        }
+        cout << "\n\nOpenMP cat dataset test\n\n";
 
-        Matrix pred = frd_cache2.A[size(params.W) - 1].toCPU();
-        Matrix pred_labels = pred > 0.5f;
+        start = std::chrono::high_resolution_clock::now();
 
-        cout << "\n\nSize of pred: " << "(" << pred_labels.getRows() << ", " << pred_labels.getCols() << ")";
-        cout << "\n\nPred label: " << pred_labels(0, 101);
-        cout << "\n\nAccuracy: " << accuracy<SequentialBackend>(y_train_cat, pred)*100<<"%";
+        Parameters<OpenMPBackend> params2 = train<OpenMPBackend>(X_train_cat, X_test_cat, y_train_cat, y_test_cat, dim_list, "tanh", 0.005f, 300, 50);
 
-        cout << "\n\nBackpropagation test\n\n";
+        end = std::chrono::high_resolution_clock::now();
 
-        Backward<CUDABackend> grads = backpropagation<CUDABackend>(frd_cache2, params, y_train_cat.toCUDA(), "relu");
+        elapsed = end - start;
 
-        for (int i = size(dim_list) - 1; i > 0; i--)
-        {
-            cout << "dZ" << i << " shape: " << "(" << grads.dZ[i].getRows() << ", " << grads.dZ[i].getCols() << ")\n";
-            cout << "dW" << i << " shape: " << "(" << grads.dW[i].getRows() << ", " << grads.dW[i].getCols() << ")\n";
-            cout << "dB" << i << " shape: " << "(" << grads.dB[i].getRows() << ", " << grads.dB[i].getCols() << ")\n\n";
-        }
+        cout << "\nOpenMP cat training time: " << elapsed.count() << " seconds\n";
 
-        cout << "\n\nTests\n\n";
+        predict<OpenMPBackend>(X_test_cat, y_test_cat, params2, "tanh", 7);
 
-        Matrix Pclip(1, 4);
-        Pclip.setData({ -1.0f, 0.0f, 0.5f, 2.0f });
 
-        Matrix clipped = CUDABackend::clipM(Pclip.toCUDA(), 1e-8f, 1.0f - 1e-8f).toCPU();
 
-        for (int i = 0; i < 4; i++)
-            cout << clipped(0, i) << " ";
+        cout << "\n\nCUDA cat dataset test\n\n";
 
-        cout << "\n";
+        start = std::chrono::high_resolution_clock::now();
 
-        Matrix logTest(1, 2);
-        logTest.setData({ 0.5f, 1.0f });
+        Parameters<CUDABackend> params3 = train<CUDABackend>(X_train_cat.toCUDA(), X_test_cat.toCUDA(), y_train_cat.toCUDA(), y_test_cat.toCUDA(), dim_list, "tanh", 0.005f, 700, 100);
 
-        Matrix logged = CUDABackend::logM(logTest.toCUDA()).toCPU();
+        cudaDeviceSynchronize();
 
-        cout << logged(0, 0) << " " << logged(0, 1) << "\n";
+        end = std::chrono::high_resolution_clock::now();
 
-        dim_list = { X_train_cat.getRows(), 100, 100, 200, y_train_cat.getRows() };
+        elapsed = end - start;
 
-        Parameters<CUDABackend> params1 = train<CUDABackend>(X_train_cat.toCUDA(), X_test_cat.toCUDA(), y_train_cat.toCUDA(), y_test_cat.toCUDA(), dim_list, "relu", 0.005f, 100, 10);
+        cout << "\nCUDA cat training time: " << elapsed.count() << " seconds\n";
 
-        cout << "\n\nPrediction test\n\n";
+        predict<CUDABackend>(X_test_cat, y_test_cat, params3, "tanh", 7);
 
-        predict<CUDABackend>(X_test_cat, y_test_cat, params1, "relu", 7);
 
-        int threads = omp_get_max_threads();
-        cout << "\n\nMax OpenMP threads: " << threads << "\n";
 
-        Matrix T(2, 3);
+        cout << "\n\nSequential mnist dataset test\n\n";
 
-        T.setData({ 1, 2, 2, 3, 7, 9 });
+        dim_list = { X_train_mnist.getRows(), 100, 100, 200, y_train_mnist.getRows() };
 
-        CMatrix d_T = T.toCUDA();
-        Matrix T2 = d_T.toCPU();
+        start = std::chrono::high_resolution_clock::now();
 
-        cout << "\n\nCUDA copy test: "<<Matrix::sum((T==T2))(0, 0)<<"\n\n";
+        Parameters<SequentialBackend> params4 = train<SequentialBackend>(X_train_mnist, X_test_mnist, y_train_mnist, y_test_mnist, dim_list, "relu", 0.01f, 100, 10);
 
-        cudaDeviceProp prop;
-        cudaGetDeviceProperties(&prop, 0);
+        end = std::chrono::high_resolution_clock::now();
 
-        std::cout << "GPU: " << prop.name << "\n";
-        std::cout << "Max threads per block: " << prop.maxThreadsPerBlock << "\n";
-        std::cout << "Max block dimensions: "
-            << prop.maxThreadsDim[0] << " "
-            << prop.maxThreadsDim[1] << " "
-            << prop.maxThreadsDim[2] << "\n";
-        std::cout << "Max grid dimensions: "
-            << prop.maxGridSize[0] << " "
-            << prop.maxGridSize[1] << " "
-            << prop.maxGridSize[2] << "\n";
-        std::cout << "Shared memory per block: "
-            << prop.sharedMemPerBlock << "\n";
-        std::cout << "SM count: "
-            << prop.multiProcessorCount << "\n";
+        elapsed = end - start;
+
+        cout << "\nSequential mnist training time: " << elapsed.count() << " seconds\n";
+
+        predict<SequentialBackend>(X_test_mnist, y_test_mnist, params4, "relu", 7);
+
+
+
+        cout << "\n\nOpenMP mnist dataset test\n\n";
+
+        start = std::chrono::high_resolution_clock::now();
+
+        Parameters<OpenMPBackend> params5 = train<OpenMPBackend>(X_train_mnist, X_test_mnist, y_train_mnist, y_test_mnist, dim_list, "relu", 0.01f, 300, 50);
+
+        end = std::chrono::high_resolution_clock::now();
+
+        elapsed = end - start;
+
+        cout << "\nOpenMP mnist training time: " << elapsed.count() << " seconds\n";
+        
+        predict<OpenMPBackend>(X_test_mnist, y_test_mnist, params5, "relu", 7);
+
+
+
+        cout << "\n\nCUDA mnist dataset test\n\n";
+
+        start = std::chrono::high_resolution_clock::now();
+
+        Parameters<CUDABackend> params6 = train<CUDABackend>(X_train_mnist.toCUDA(), X_test_mnist.toCUDA(), y_train_mnist.toCUDA(), y_test_mnist.toCUDA(), dim_list, "relu", 0.01f, 700, 100);
+
+        cudaDeviceSynchronize();
+
+        end = std::chrono::high_resolution_clock::now();
+
+        elapsed = end - start;
+
+        cout << "\nCUDA mnist training time: " << elapsed.count() << " seconds\n";
+        
+        predict<CUDABackend>(X_test_mnist, y_test_mnist, params6, "relu", 7);
     }
     catch (const exception& e)
     {
