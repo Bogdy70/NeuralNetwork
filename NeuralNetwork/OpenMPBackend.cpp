@@ -278,6 +278,25 @@ Matrix OpenMPBackend::broadcastAdd(const Matrix& A, const Matrix& B)
     return C;
 }
 
+Matrix OpenMPBackend::broadcastDiv(const Matrix& A, const Matrix& B)
+{
+    if (A.getCols() != B.getCols() || B.getRows() != 1)
+        throw runtime_error("Invalid shape for division with broadcast");
+
+    Matrix C(A.getRows(), A.getCols());
+
+#pragma omp parallel for
+    for (int i = 0; i < A.getRows(); i++)
+    {
+        for (int j = 0; j < A.getCols(); j++)
+        {
+            C(i, j) = A(i, j) / B(0, j);
+        }
+    }
+
+    return C;
+}
+
 Matrix OpenMPBackend::T(const Matrix& A)
 {
     Matrix Tr(A.getCols(), A.getRows());
@@ -437,6 +456,54 @@ Matrix OpenMPBackend::logM(const Matrix& A)
     return C;
 }
 
+Matrix OpenMPBackend::tanhM(const Matrix& A)
+{
+    Matrix C(A.getRows(), A.getCols());
+
+#pragma omp parallel for
+    for (int i = 0; i < A.getRows(); i++)
+    {
+        for (int j = 0; j < A.getCols(); j++)
+        {
+            C(i, j) = tanhf(A(i, j));
+        }
+    }
+
+    return C;
+}
+
+Matrix OpenMPBackend::relu(const Matrix& A)
+{
+    Matrix C(A.getRows(), A.getCols());
+
+#pragma omp parallel for
+    for (int i = 0; i < A.getRows(); i++)
+    {
+        for (int j = 0; j < A.getCols(); j++)
+        {
+            C(i, j) = A(i, j) > 0.0f ? A(i, j) : 0.0f;
+        }
+    }
+
+    return C;
+}
+
+Matrix OpenMPBackend::der_relu(const Matrix& A)
+{
+    Matrix C(A.getRows(), A.getCols());
+
+#pragma omp parallel for
+    for (int i = 0; i < A.getRows(); i++)
+    {
+        for (int j = 0; j < A.getCols(); j++)
+        {
+            C(i, j) = A(i, j) > 0.0f ? 1.0f : 0.0f;
+        }
+    }
+
+    return C;
+}
+
 Matrix OpenMPBackend::maxM(const Matrix& A, int axis)
 {
     if (axis == 0)
@@ -563,4 +630,17 @@ Matrix OpenMPBackend::clipM(const Matrix& A, float minValue, float maxValue)
     }
 
     return C;
+}
+
+Matrix OpenMPBackend::clone(const Matrix& A)
+{
+    return A;
+}
+
+float OpenMPBackend::toScalar(const Matrix& A)
+{
+    if (A.getRows() != 1 || A.getCols() != 1)
+        throw runtime_error("Invalid shape for scalar matrix");
+
+    return A(0, 0);
 }

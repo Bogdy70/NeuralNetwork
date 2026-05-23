@@ -60,6 +60,8 @@ public:
 
 	CMatrix broadcastAdd(const CMatrix& B) const;
 
+	CMatrix broadcastDiv(const CMatrix& B) const;
+
 	CMatrix T() const;
 
 	static CMatrix random(int rows, int cols);
@@ -74,6 +76,12 @@ public:
 
 	static CMatrix logM(const CMatrix& A);
 
+	static CMatrix tanhM(const CMatrix& A);
+
+	static CMatrix relu(const CMatrix& A);
+
+	static CMatrix der_relu(const CMatrix& A);
+
 	static CMatrix maxA(const CMatrix& A, int axis = -1);
 
 	static CMatrix argmax(const CMatrix& A, int axis = 0);
@@ -81,6 +89,8 @@ public:
 	static CMatrix clipM(const CMatrix& A, float minVal, float maxVal);
 
 	CMatrix clone() const;
+
+	float toScalar() const;
 };
 
 CMatrix operator/(float x, const CMatrix& A);

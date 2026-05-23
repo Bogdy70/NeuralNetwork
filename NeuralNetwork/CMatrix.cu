@@ -110,7 +110,15 @@ __global__ void matmulKernel(const float* A, const float* B, float* C, int N, in
 CMatrix CMatrix::matmul(const CMatrix& B) const
 {
 	if (cols != B.getRows())
-		throw std::runtime_error("Invalid shape for matrix multiplication");
+	{
+		throw std::runtime_error(
+			"Invalid shape for matrix multiplication: (" +
+			std::to_string(rows) + ", " + std::to_string(cols) +
+			") x (" +
+			std::to_string(B.getRows()) + ", " + std::to_string(B.getCols()) +
+			")"
+		);
+	}
 
 	CMatrix C(rows, B.getCols());
 
@@ -399,6 +407,32 @@ CMatrix CMatrix::broadcastAdd(const CMatrix& B) const
 	return C;
 }
 
+__global__ void broadcastDivKernel(const float* A, const float* B, float* C, int N, int M)
+{
+	int i = blockIdx.y * blockDim.y + threadIdx.y;
+	int j = blockIdx.x * blockDim.x + threadIdx.x;
+
+	if (i < N && j < M)
+	{
+		C[i * M + j] = A[i * M + j] / B[j];
+	}
+}
+
+CMatrix CMatrix::broadcastDiv(const CMatrix& B) const
+{
+	if (cols != B.getCols() || B.getRows() != 1)
+		throw std::runtime_error("Invalid shape for division with broadcast");
+
+	CMatrix C(rows, cols);
+
+	dim3 block(16, 16);
+	dim3 grid((cols + block.x - 1) / block.x, (rows + block.y - 1) / block.y);
+
+	broadcastDivKernel << <grid, block >> > (data, B.rawData(), C.rawData(), rows, cols);
+
+	return C;
+}
+
 __global__ void TKernel(const float* A, float* C, int N, int M)
 {
 	int i = blockIdx.y * blockDim.y + threadIdx.y;
@@ -406,13 +440,13 @@ __global__ void TKernel(const float* A, float* C, int N, int M)
 
 	if (i < N && j < M)
 	{
-		C[j * M + i] = A[i * M + j];
+		C[j * N + i] = A[i * M + j];
 	}
 }
 
 CMatrix CMatrix::T() const
 {
-	CMatrix C(rows, cols);
+	CMatrix C(cols, rows);
 
 	dim3 block(16, 16);
 	dim3 grid((cols + block.x - 1) / block.x, (rows + block.y - 1) / block.y);
@@ -620,6 +654,75 @@ CMatrix CMatrix::logM(const CMatrix& A)
 	dim3 grid((A.getCols() + block.x - 1) / block.x, (A.getRows() + block.y - 1) / block.y);
 
 	logKernel << <grid, block >> > (A.rawData(), C.rawData(), A.getRows(), A.getCols());
+
+	return C;
+}
+
+__global__ void tanhKernel(const float* A, float* C, int N, int M)
+{
+	int i = blockIdx.y * blockDim.y + threadIdx.y;
+	int j = blockIdx.x * blockDim.x + threadIdx.x;
+
+	if (i < N && j < M)
+	{
+		C[i * M + j] = tanhf(A[i * M + j]);
+	}
+}
+
+CMatrix CMatrix::tanhM(const CMatrix& A)
+{
+	CMatrix C(A.getRows(), A.getCols());
+
+	dim3 block(16, 16);
+	dim3 grid((A.getCols() + block.x - 1) / block.x, (A.getRows() + block.y - 1) / block.y);
+
+	tanhKernel << <grid, block >> > (A.rawData(), C.rawData(), A.getRows(), A.getCols());
+
+	return C;
+}
+
+__global__ void reluKernel(const float* A, float* C, int N, int M)
+{
+	int i = blockIdx.y * blockDim.y + threadIdx.y;
+	int j = blockIdx.x * blockDim.x + threadIdx.x;
+
+	if (i < N && j < M)
+	{
+		C[i * M + j] = A[i * M + j] > 0.0f ? A[i * M + j] : 0.0f;
+	}
+}
+
+CMatrix CMatrix::relu(const CMatrix& A)
+{
+	CMatrix C(A.getRows(), A.getCols());
+
+	dim3 block(16, 16);
+	dim3 grid((A.getCols() + block.x - 1) / block.x, (A.getRows() + block.y - 1) / block.y);
+
+	reluKernel << <grid, block >> > (A.rawData(), C.rawData(), A.getRows(), A.getCols());
+
+	return C;
+}
+
+__global__ void der_reluKernel(const float* A, float* C, int N, int M)
+{
+	int i = blockIdx.y * blockDim.y + threadIdx.y;
+	int j = blockIdx.x * blockDim.x + threadIdx.x;
+
+	if (i < N && j < M)
+	{
+		C[i * M + j] = A[i * M + j] > 0.0f ? 1.0f : 0.0f;
+	}
+}
+
+CMatrix CMatrix::der_relu(const CMatrix& A)
+{
+	CMatrix C(A.getRows(), A.getCols());
+
+	dim3 block(16, 16);
+	dim3 grid((A.getCols() + block.x - 1) / block.x, (A.getRows() + block.y - 1) / block.y);
+
+	der_reluKernel << <grid, block >> > (A.rawData(), C.rawData(), A.getRows(), A.getCols());
 
 	return C;
 }
@@ -910,4 +1013,16 @@ CMatrix CMatrix::clone() const
 	cudaMemcpy(C.rawData(), data, size() * sizeof(float), cudaMemcpyDeviceToDevice);
 
 	return C;
+}
+
+float CMatrix::toScalar() const
+{
+	if (rows != 1 || cols != 1)
+		throw std::runtime_error("Invalid shape for a scalar matrix");
+
+	float value = 0.0f;
+
+	cudaMemcpy(&value, data, sizeof(float), cudaMemcpyDeviceToHost);
+
+	return value;
 }

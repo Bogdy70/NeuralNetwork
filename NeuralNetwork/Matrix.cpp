@@ -327,6 +327,24 @@ Matrix Matrix::broadcastAdd(const Matrix& B) const
     return C;
 }
 
+Matrix Matrix::broadcastDiv(const Matrix& B) const
+{
+    if (cols != B.cols || B.rows != 1)
+        throw runtime_error("Invalid shape for division with broadcast");
+
+    Matrix C(rows, cols);
+
+    for (int i = 0; i < rows; i++)
+    {
+        for (int j = 0; j < cols; j++)
+        {
+            C(i, j) = data[i * cols + j] / B(0, j);
+        }
+    }
+
+    return C;
+}
+
 Matrix Matrix::T() const
 {
     Matrix Tr(cols, rows);
@@ -477,6 +495,51 @@ Matrix Matrix::logM(const Matrix& A)
     return C;
 }
 
+Matrix Matrix::tanhM(const Matrix& A)
+{
+    Matrix C(A.rows, A.cols);
+
+    for (int i = 0; i < A.rows; i++)
+    {
+        for (int j = 0; j < A.cols; j++)
+        {
+            C(i, j) = tanhf(A(i, j));
+        }
+    }
+
+    return C;
+}
+
+Matrix Matrix::relu(const Matrix& A)
+{
+    Matrix C(A.rows, A.cols);
+
+    for (int i = 0; i < A.rows; i++)
+    {
+        for (int j = 0; j < A.cols; j++)
+        {
+            C(i, j) = A(i, j) > 0.0f ? A(i, j) : 0.0f;
+        }
+    }
+
+    return C;
+}
+
+Matrix Matrix::der_relu(const Matrix& A)
+{
+    Matrix C(A.rows, A.cols);
+
+    for (int i = 0; i < A.rows; i++)
+    {
+        for (int j = 0; j < A.cols; j++)
+        {
+            C(i, j) = A(i, j) > 0.0f ? 1.0f : 0.0f;
+        }
+    }
+
+    return C;
+}
+
 Matrix Matrix::maxM(const Matrix& A, int axis)
 {
     if (axis == 0)
@@ -597,6 +660,23 @@ Matrix Matrix::clipM(const Matrix& A, float minValue, float maxValue)
     }
 
     return C;
+}
+
+Matrix Matrix::clone() const
+{
+    Matrix C(rows, cols);
+
+    return C;
+}
+
+float Matrix::toScalar() const
+{
+    if (rows != 1 || cols != 1)
+        throw runtime_error("Invalid shape for scalar matrix");
+
+    Matrix C(rows, cols);
+
+    return C(0, 0);
 }
 
 Matrix operator*(float x, const Matrix& A)

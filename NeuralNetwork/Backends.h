@@ -76,6 +76,11 @@ struct SequentialBackend
         return A.broadcastAdd(B);
     }
 
+    static Mat broadcastDiv(const Mat& A, const Mat& B)
+    {
+        return A.broadcastDiv(B);
+    }
+
     static Mat T(const Mat& A)
     {
         return A.T();
@@ -111,6 +116,21 @@ struct SequentialBackend
         return Mat::logM(A);
     }
 
+    static Mat tanhM(const Mat& A)
+    {
+        return Mat::tanhM(A);
+    }
+
+    static Mat relu(const Mat& A)
+    {
+        return Mat::relu(A);
+    }
+
+    static Mat der_relu(const Mat& A)
+    {
+        return Mat::der_relu(A);
+    }
+
     static Mat maxM(const Mat& A, int axis = -1)
     {
         return Mat::maxM(A, axis);
@@ -124,6 +144,16 @@ struct SequentialBackend
     static Mat clipM(const Mat& A, float minValue, float maxValue)
     {
         return Mat::clipM(A, minValue, maxValue);
+    }
+
+    static Mat clone(const Mat& A)
+    {
+        return A;
+    }
+
+    static float toScalar(const Mat& A)
+    {
+        return A.toScalar();
     }
 };
 
@@ -159,6 +189,8 @@ struct OpenMPBackend
 
     static Mat broadcastAdd(const Mat& A, const Mat& B);
 
+    static Mat broadcastDiv(const Mat& A, const Mat& B);
+
     static Mat T(const Mat& A);
 
     static Mat random(int rows, int cols);
@@ -173,11 +205,21 @@ struct OpenMPBackend
 
     static Mat logM(const Mat& A);
 
+    static Mat tanhM(const Mat& A);
+
+    static Mat relu(const Mat& A);
+
+    static Mat der_relu(const Mat& A);
+
     static Mat maxM(const Mat& A, int axis = -1);
 
     static Mat argmax(const Mat& A, int axis = 0);
 
     static Mat clipM(const Mat& A, float minValue, float maxValue);
+
+    static Mat clone(const Mat& A);
+
+    static float toScalar(const Mat& A);
 };
 
 struct CUDABackend
@@ -244,6 +286,11 @@ struct CUDABackend
         return A.broadcastAdd(B);
     }
 
+    static Mat broadcastDiv(const Mat& A, const Mat& B)
+    {
+        return A.broadcastDiv(B);
+    }
+
     static Mat T(const Mat& A)
     {
         return A.T();
@@ -279,9 +326,29 @@ struct CUDABackend
         return Mat::logM(A);
     }
 
+    static Mat tanhM(const Mat& A)
+    {
+        return Mat::tanhM(A);
+    }
+
+    static Mat relu(const Mat& A)
+    {
+        return Mat::relu(A);
+    }
+
+    static Mat der_relu(const Mat& A)
+    {
+        return Mat::der_relu(A);
+    }
+
     static Mat maxA(const Mat& A, int axis = -1)
     {
         return Mat::maxA(A, axis);
+    }
+
+    static Mat argmax(const Mat& A, int axis = 0)
+    {
+        return Mat::argmax(A, axis);
     }
 
     static Mat clipM(const Mat& A, float minVal, float maxVal)
@@ -302,5 +369,10 @@ struct CUDABackend
     static Mat clone(const Mat& A)
     {
         return A.clone();
+    }
+
+    static float toScalar(const Mat& A)
+    {
+        return A.toScalar();
     }
 };

@@ -64,6 +64,8 @@ public:
 
     Matrix broadcastAdd(const Matrix& B) const;
 
+    Matrix broadcastDiv(const Matrix& B) const;
+
     Matrix T() const;
 
     static Matrix random(const int rows, const int cols);
@@ -78,11 +80,21 @@ public:
 
     static Matrix logM(const Matrix& A);
 
+    static Matrix tanhM(const Matrix& A);
+
+    static Matrix relu(const Matrix& A);
+
+    static Matrix der_relu(const Matrix& A);
+
     static Matrix maxM(const Matrix& A, int axis = -1);
 
     static Matrix argmax(const Matrix& A, int axis = 0);
 
     static Matrix clipM(const Matrix& A, float minValue, float maxValue);
+
+    Matrix clone() const;
+
+    float toScalar() const;
 };
 
 Matrix operator*(float x, const Matrix& A);
