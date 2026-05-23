@@ -237,7 +237,9 @@ Parameters<Backend> train(const typename Backend::Mat& X_train,
 {
     Parameters<Backend> params = init_params<Backend>(dim_list);
 
-    for (int epoch = 0; epoch < epochs; epoch++)
+    auto start_time = std::chrono::high_resolution_clock::now();
+
+    for (int epoch = 0; epoch <= epochs; epoch++)
     {
         Forward<Backend> frd_cache = forward_pass<Backend>(params, X_train, activation);
         float train_cost = cost<Backend>(y_train, frd_cache.A[size(dim_list) - 1]);
@@ -247,10 +249,18 @@ Parameters<Backend> train(const typename Backend::Mat& X_train,
 
         if (epoch % viewing_rate == 0)
         {
+            if constexpr (std::is_same_v<Backend, CUDABackend>)
+            {
+                cudaDeviceSynchronize();
+            }
+
+            auto current_time = std::chrono::high_resolution_clock::now();
+            std::chrono::duration<double> elapsed = current_time - start_time;
+
             frd_cache = forward_pass<Backend>(params, X_test, activation);
             float test_cost = cost<Backend>(y_test, frd_cache.A[size(dim_list) - 1]);
             float test_acc = accuracy<Backend>(y_test, frd_cache.A[size(dim_list) - 1]);
-            cout << "Epoch: " << epoch << " || Train loss: " << train_cost << " || Test loss: " << test_cost << " || Train accuracy: " << train_acc * 100.0f << "% || Test accuracy: " << test_acc * 100.0f << "%\n";
+            cout << "Epoch: " << epoch << " || Train loss: " << train_cost << " || Test loss: " << test_cost << " || Train accuracy: " << train_acc * 100.0f << "% || Test accuracy: " << test_acc * 100.0f << "% || Time: "<<elapsed.count()<<" sec\n";
         }
     }
 
@@ -358,7 +368,7 @@ int main()
 
         auto start = std::chrono::high_resolution_clock::now();
 
-        Parameters<SequentialBackend> params1 = train<SequentialBackend>(X_train_cat, X_test_cat, y_train_cat, y_test_cat, dim_list, "tanh", 0.005f, 100, 10);
+        Parameters<SequentialBackend> params1 = train<SequentialBackend>(X_train_cat, X_test_cat, y_train_cat, y_test_cat, dim_list, "tanh", 0.005f, 700, 100);
 
         auto end = std::chrono::high_resolution_clock::now();
 
@@ -374,7 +384,7 @@ int main()
 
         start = std::chrono::high_resolution_clock::now();
 
-        Parameters<OpenMPBackend> params2 = train<OpenMPBackend>(X_train_cat, X_test_cat, y_train_cat, y_test_cat, dim_list, "tanh", 0.005f, 300, 50);
+        Parameters<OpenMPBackend> params2 = train<OpenMPBackend>(X_train_cat, X_test_cat, y_train_cat, y_test_cat, dim_list, "tanh", 0.005f, 700, 100);
 
         end = std::chrono::high_resolution_clock::now();
 
@@ -410,7 +420,7 @@ int main()
 
         start = std::chrono::high_resolution_clock::now();
 
-        Parameters<SequentialBackend> params4 = train<SequentialBackend>(X_train_mnist, X_test_mnist, y_train_mnist, y_test_mnist, dim_list, "relu", 0.01f, 100, 10);
+        Parameters<SequentialBackend> params4 = train<SequentialBackend>(X_train_mnist, X_test_mnist, y_train_mnist, y_test_mnist, dim_list, "relu", 0.01f, 700, 100);
 
         end = std::chrono::high_resolution_clock::now();
 
@@ -426,7 +436,7 @@ int main()
 
         start = std::chrono::high_resolution_clock::now();
 
-        Parameters<OpenMPBackend> params5 = train<OpenMPBackend>(X_train_mnist, X_test_mnist, y_train_mnist, y_test_mnist, dim_list, "relu", 0.01f, 300, 50);
+        Parameters<OpenMPBackend> params5 = train<OpenMPBackend>(X_train_mnist, X_test_mnist, y_train_mnist, y_test_mnist, dim_list, "relu", 0.01f, 700, 100);
 
         end = std::chrono::high_resolution_clock::now();
 
