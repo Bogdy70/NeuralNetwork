@@ -1,95 +1,179 @@
 # NeuralNetwork
 
-## Example run
+Cat dataset loaded successfully
+X_train_cat: (12288, 209)
+y_train_cat: (1, 209)
+X_test_cat: (12288, 50)
+y_test_cat: (1, 50)
 
-Cat dataset loaded successfully  
-X_train_cat: (12288, 209)  
-y_train_cat: (1, 209)  
-X_test_cat: (12288, 50)  
-y_test_cat: (1, 50)  
+Mnist dataset loaded successfully
+X_train_mnist: (784, 5000)
+y_train_mnist: (10, 5000)
+X_test_mnist: (784, 1000)
+y_test_mnist: (10, 1000)
 
-Mnist dataset loaded successfully  
-X_train_mnist: (784, 5000)  
-y_train_mnist: (10, 5000)  
-X_test_mnist: (784, 1000)  
-y_test_mnist: (10, 1000)  
+Sequential cat dataset test
 
-### Sequential cat dataset test
+Epoch: 0 || Train loss: 0.675588 || Test loss: 0.799319 || Train accuracy: 64.1148% || Test accuracy: 34% || Time: 1.34004 sec
+Epoch: 100 || Train loss: 0.435139 || Test loss: 0.532536 || Train accuracy: 73.6842% || Test accuracy: 78% || Time: 117.136 sec
+Epoch: 200 || Train loss: 0.323595 || Test loss: 0.504824 || Train accuracy: 84.2105% || Test accuracy: 80% || Time: 235.108 sec
+Epoch: 300 || Train loss: 0.237676 || Test loss: 0.506617 || Train accuracy: 88.9952% || Test accuracy: 80% || Time: 354.598 sec
+Epoch: 400 || Train loss: 0.170707 || Test loss: 0.526326 || Train accuracy: 94.2584% || Test accuracy: 80% || Time: 469.336 sec
+Epoch: 500 || Train loss: 0.117655 || Test loss: 0.560655 || Train accuracy: 98.5646% || Test accuracy: 78% || Time: 582.198 sec
+Epoch: 600 || Train loss: 0.0777854 || Test loss: 0.608299 || Train accuracy: 99.5215% || Test accuracy: 78% || Time: 694.25 sec
+Epoch: 700 || Train loss: 0.053182 || Test loss: 0.669524 || Train accuracy: 100% || Test accuracy: 74% || Time: 805.184 sec
 
-```
-Epoch: 0 || Train loss: 0.734889 || Test loss: 1.17598 || Train accuracy: 38.2775% || Test accuracy: 34%
-Epoch: 10 || Train loss: 0.612785 || Test loss: 0.781068 || Train accuracy: 66.0287% || Test accuracy: 32%
-Epoch: 20 || Train loss: 0.576315 || Test loss: 0.737011 || Train accuracy: 68.8995% || Test accuracy: 34%
-Epoch: 30 || Train loss: 0.54572 || Test loss: 0.708013 || Train accuracy: 71.2919% || Test accuracy: 42%
-Epoch: 40 || Train loss: 0.519914 || Test loss: 0.720245 || Train accuracy: 76.555% || Test accuracy: 42%
-Epoch: 50 || Train loss: 0.517557 || Test loss: 0.804646 || Train accuracy: 81.8182% || Test accuracy: 38%
-Epoch: 60 || Train loss: 0.512444 || Test loss: 0.860359 || Train accuracy: 80.8612% || Test accuracy: 38%
-Epoch: 70 || Train loss: 0.498269 || Test loss: 0.868639 || Train accuracy: 79.9043% || Test accuracy: 38%
-Epoch: 80 || Train loss: 0.483243 || Test loss: 0.862378 || Train accuracy: 79.9043% || Test accuracy: 38%
-Epoch: 90 || Train loss: 0.469468 || Test loss: 0.856197 || Train accuracy: 80.3828% || Test accuracy: 38%
-```
-
-Sequential cat training time: 111.209 seconds
+Sequential cat training time: 805.236 seconds
 
 Truth: 1 || Pred: 0
 
----
+OpenMP cat dataset test
 
-### OpenMP cat dataset test
+Epoch: 0 || Train loss: 0.758618 || Test loss: 1.43023 || Train accuracy: 38.756% || Test accuracy: 34% || Time: 0.0594862 sec
+Epoch: 100 || Train loss: 0.45634 || Test loss: 0.831209 || Train accuracy: 87.0813% || Test accuracy: 38% || Time: 6.83982 sec
+Epoch: 200 || Train loss: 0.353437 || Test loss: 0.805209 || Train accuracy: 89.4737% || Test accuracy: 50% || Time: 13.7209 sec
+Epoch: 300 || Train loss: 0.270849 || Test loss: 0.781404 || Train accuracy: 93.3014% || Test accuracy: 60% || Time: 20.622 sec
+Epoch: 400 || Train loss: 0.200205 || Test loss: 0.762845 || Train accuracy: 96.6507% || Test accuracy: 62% || Time: 27.5659 sec
+Epoch: 500 || Train loss: 0.136887 || Test loss: 0.738544 || Train accuracy: 98.5646% || Test accuracy: 64% || Time: 34.5688 sec
+Epoch: 600 || Train loss: 0.0884581 || Test loss: 0.710055 || Train accuracy: 98.5646% || Test accuracy: 68% || Time: 41.566 sec
+Epoch: 700 || Train loss: 0.0591217 || Test loss: 0.686301 || Train accuracy: 99.5215% || Test accuracy: 72% || Time: 48.8558 sec
 
-```
-Epoch: 0 || Train loss: 0.79146 || Test loss: 1.07842 || Train accuracy: 36.8421% || Test accuracy: 34%
-Epoch: 50 || Train loss: 0.562205 || Test loss: 0.49846 || Train accuracy: 67.9426% || Test accuracy: 74%
-Epoch: 100 || Train loss: 0.449977 || Test loss: 0.52923 || Train accuracy: 74.1627% || Test accuracy: 76%
-Epoch: 150 || Train loss: 0.36433 || Test loss: 0.45033 || Train accuracy: 80.8612% || Test accuracy: 82%
-Epoch: 200 || Train loss: 0.411648 || Test loss: 0.437191 || Train accuracy: 76.555% || Test accuracy: 84%
-Epoch: 250 || Train loss: 0.346902 || Test loss: 0.430631 || Train accuracy: 79.9043% || Test accuracy: 86%
-```
-
-OpenMP cat training time: 23.6073 seconds
+OpenMP cat training time: 48.9013 seconds
 
 Truth: 1 || Pred: 0
 
----
+CUDA cat dataset test
 
-### CUDA cat dataset test
+Epoch: 0 || Train loss: 0.73747 || Test loss: 0.734932 || Train accuracy: 65.5502% || Test accuracy: 42% || Time: 0.00626 sec
+Epoch: 100 || Train loss: 0.492689 || Test loss: 0.533569 || Train accuracy: 70.8134% || Test accuracy: 76% || Time: 0.657742 sec
+Epoch: 200 || Train loss: 0.397199 || Test loss: 0.479589 || Train accuracy: 77.0335% || Test accuracy: 80% || Time: 1.2295 sec
+Epoch: 300 || Train loss: 0.317063 || Test loss: 0.457964 || Train accuracy: 83.2536% || Test accuracy: 82% || Time: 1.74728 sec
+Epoch: 400 || Train loss: 0.245859 || Test loss: 0.455132 || Train accuracy: 90.4306% || Test accuracy: 82% || Time: 2.25515 sec
+Epoch: 500 || Train loss: 0.185374 || Test loss: 0.46554 || Train accuracy: 94.2584% || Test accuracy: 82% || Time: 2.75001 sec
+Epoch: 600 || Train loss: 0.133849 || Test loss: 0.487701 || Train accuracy: 97.1292% || Test accuracy: 82% || Time: 3.22844 sec
+Epoch: 700 || Train loss: 0.0900744 || Test loss: 0.526929 || Train accuracy: 99.5215% || Test accuracy: 82% || Time: 3.70941 sec
 
-```
-Epoch: 0 || Train loss: 1.63038 || Test loss: 0.700767 || Train accuracy: 34.4498% || Test accuracy: 58%
-Epoch: 100 || Train loss: 0.496548 || Test loss: 0.66069 || Train accuracy: 77.512% || Test accuracy: 54%
-Epoch: 200 || Train loss: 0.414483 || Test loss: 0.489289 || Train accuracy: 77.9904% || Test accuracy: 78%
-Epoch: 300 || Train loss: 0.32657 || Test loss: 0.462734 || Train accuracy: 82.7751% || Test accuracy: 82%
-Epoch: 400 || Train loss: 0.249982 || Test loss: 0.459171 || Train accuracy: 88.5167% || Test accuracy: 82%
-Epoch: 500 || Train loss: 0.182396 || Test loss: 0.470276 || Train accuracy: 94.2584% || Test accuracy: 80%
-Epoch: 600 || Train loss: 0.122497 || Test loss: 0.494631 || Train accuracy: 98.0861% || Test accuracy: 82%
-```
-
-CUDA cat training time: 3.84925 seconds
+CUDA cat training time: 3.91586 seconds
 
 Truth: 1 || Pred: 0
 
----
+Sequential mnist dataset test
 
-### Sequential mnist dataset test
+Epoch: 0 || Train loss: 2.37501 || Test loss: 2.38058 || Train accuracy: 8.32% || Test accuracy: 8.5% || Time: 0.856481 sec
+Epoch: 100 || Train loss: 1.50541 || Test loss: 1.58992 || Train accuracy: 65.52% || Test accuracy: 60.8% || Time: 78.1534 sec
+Epoch: 200 || Train loss: 0.832999 || Test loss: 0.928163 || Train accuracy: 80.48% || Test accuracy: 77.4% || Time: 152.709 sec
+Epoch: 300 || Train loss: 0.570633 || Test loss: 0.670409 || Train accuracy: 85.88% || Test accuracy: 82.7% || Time: 228.38 sec
+Epoch: 400 || Train loss: 0.454798 || Test loss: 0.559935 || Train accuracy: 88.26% || Test accuracy: 84.2% || Time: 303.088 sec
+Epoch: 500 || Train loss: 0.39094 || Test loss: 0.501023 || Train accuracy: 89.36% || Test accuracy: 85.4% || Time: 377.613 sec
+Epoch: 600 || Train loss: 0.349278 || Test loss: 0.463714 || Train accuracy: 90.3% || Test accuracy: 86.3% || Time: 455.109 sec
+Epoch: 700 || Train loss: 0.31902 || Test loss: 0.437212 || Train accuracy: 91.3% || Test accuracy: 86.2% || Time: 527.193 sec
 
-```
-Epoch: 0 || Train loss: 2.43224 || Test loss: 2.43875 || Train accuracy: 10.5% || Test accuracy: 8.3%
-Epoch: 10 || Train loss: 2.29513 || Test loss: 2.31769 || Train accuracy: 14.8% || Test accuracy: 12%
-Epoch: 20 || Train loss: 2.20194 || Test loss: 2.2343 || Train accuracy: 19.86% || Test accuracy: 16.6%
-Epoch: 30 || Train loss: 2.11855 || Test loss: 2.15998 || Train accuracy: 26.18% || Test accuracy: 22.4%
-Epoch: 40 || Train loss: 2.03654 || Test loss: 2.08782 || Train accuracy: 32.36% || Test accuracy: 27.6%
-Epoch: 50 || Train loss: 1.953 || Test loss: 2.01401 || Train accuracy: 38.56% || Test accuracy: 34.7%
-Epoch: 60 || Train loss: 1.86573 || Test loss: 1.93611 || Train accuracy: 46.42% || Test accuracy: 42%
-Epoch: 70 || Train loss: 1.77435 || Test loss: 1.85389 || Train accuracy: 53.74% || Test accuracy: 47.5%
-Epoch: 80 || Train loss: 1.6807 || Test loss: 1.7689 || Train accuracy: 59.52% || Test accuracy: 53.8%
-Epoch: 90 || Train loss: 1.58648 || Test loss: 1.68288 || Train accuracy: 63.7% || Test accuracy: 57.6%
-```
+Sequential mnist training time: 527.254 seconds
 
-Sequential mnist training time: 79.0261 seconds
+Truth: 9 || Pred: 9
+
+
+
+
+
+
+
+        .#
+      .###
+      ####.
+     .######.
+     ########
+    .##  .####
+    .#.   ####
+    .#.   ###.
+    .## ..####
+     ###### ##.
+      ###.  .##
+       ..    .#.
+             .##
+              .#.
+               ##
+               .#.
+                ##
+                 #.
+                 ##
+                  #.
+                  ##
+                   #.
+                   ##
+                    #.
+
+
+
+OpenMP mnist dataset test
+
+Epoch: 0 || Train loss: 2.38729 || Test loss: 2.35986 || Train accuracy: 10.8% || Test accuracy: 11.4% || Time: 0.0668349 sec
+Epoch: 100 || Train loss: 1.42917 || Test loss: 1.50612 || Train accuracy: 68.08% || Test accuracy: 62.8% || Time: 8.19211 sec
+Epoch: 200 || Train loss: 0.802116 || Test loss: 0.909274 || Train accuracy: 82.08% || Test accuracy: 77.5% || Time: 16.4572 sec
+Epoch: 300 || Train loss: 0.558314 || Test loss: 0.670035 || Train accuracy: 86.24% || Test accuracy: 81.8% || Time: 24.7624 sec
+Epoch: 400 || Train loss: 0.448335 || Test loss: 0.559289 || Train accuracy: 88.38% || Test accuracy: 84.4% || Time: 33.2435 sec
+Epoch: 500 || Train loss: 0.386202 || Test loss: 0.497086 || Train accuracy: 89.92% || Test accuracy: 85.8% || Time: 41.6686 sec
+Epoch: 600 || Train loss: 0.345795 || Test loss: 0.457831 || Train accuracy: 90.82% || Test accuracy: 86.9% || Time: 50.1316 sec
+Epoch: 700 || Train loss: 0.31623 || Test loss: 0.43083 || Train accuracy: 91.38% || Test accuracy: 87.6% || Time: 58.7461 sec
+
+OpenMP mnist training time: 58.759 seconds
+
+Truth: 9 || Pred: 9
+
+
+
+
+
+
+
+        .#
+      .###
+      ####.
+     .######.
+     ########
+    .##  .####
+    .#.   ####
+    .#.   ###.
+    .## ..####
+     ###### ##.
+      ###.  .##
+       ..    .#.
+             .##
+              .#.
+               ##
+               .#.
+                ##
+                 #.
+                 ##
+                  #.
+                  ##
+                   #.
+                   ##
+                    #.
+
+
+
+CUDA mnist dataset test
+
+Epoch: 0 || Train loss: 2.93916 || Test loss: 2.54614 || Train accuracy: 9.96% || Test accuracy: 12.1% || Time: 0.0771189 sec
+Epoch: 100 || Train loss: 1.08881 || Test loss: 1.16974 || Train accuracy: 76.02% || Test accuracy: 71.3% || Time: 1.37293 sec
+Epoch: 200 || Train loss: 0.651034 || Test loss: 0.757759 || Train accuracy: 83.92% || Test accuracy: 79.6% || Time: 2.46619 sec
+Epoch: 300 || Train loss: 0.494483 || Test loss: 0.607002 || Train accuracy: 87.36% || Test accuracy: 82.5% || Time: 3.53228 sec
+Epoch: 400 || Train loss: 0.417483 || Test loss: 0.531262 || Train accuracy: 88.92% || Test accuracy: 85% || Time: 4.59855 sec
+Epoch: 500 || Train loss: 0.370601 || Test loss: 0.485533 || Train accuracy: 89.94% || Test accuracy: 85.6% || Time: 5.66725 sec
+Epoch: 600 || Train loss: 0.33824 || Test loss: 0.455087 || Train accuracy: 90.7% || Test accuracy: 86.8% || Time: 6.73093 sec
+Epoch: 700 || Train loss: 0.313933 || Test loss: 0.433237 || Train accuracy: 91.38% || Test accuracy: 87.5% || Time: 7.8377 sec
+
+CUDA mnist training time: 7.85793 seconds
 
 Truth: 9 || Pred: 4
 
-```
+
+
+
+
+
+
         .#
       .###
       ####.
@@ -114,101 +198,8 @@ Truth: 9 || Pred: 4
                    #.
                    ##
                     #.
-                    ##
-                     #.
-```
 
----
 
-### OpenMP mnist dataset test
-
-```
-Epoch: 0 || Train loss: 2.33547 || Test loss: 2.33067 || Train accuracy: 10.64% || Test accuracy: 12.2%
-Epoch: 50 || Train loss: 2.06295 || Test loss: 2.10641 || Train accuracy: 37.3% || Test accuracy: 29.7%
-Epoch: 100 || Train loss: 1.73838 || Test loss: 1.82255 || Train accuracy: 59.34% || Test accuracy: 53.7%
-Epoch: 150 || Train loss: 1.35909 || Test loss: 1.47436 || Train accuracy: 69.28% || Test accuracy: 62.4%
-Epoch: 200 || Train loss: 1.03019 || Test loss: 1.15745 || Train accuracy: 76.74% || Test accuracy: 69.8%
-Epoch: 250 || Train loss: 0.804067 || Test loss: 0.931436 || Train accuracy: 80.98% || Test accuracy: 74.9%
-```
-
-OpenMP mnist training time: 27.6625 seconds
-
-Truth: 9 || Pred: 9
-
-```
-        .#
-      .###
-      ####.
-     .######.
-     ########
-    .##  .####
-    .#.   ####
-    .#.   ###.
-    .## ..####
-     ###### ##.
-      ###.  .##
-       ..    .#.
-             .##
-              .#.
-               ##
-               .#.
-                ##
-                 #.
-                 ##
-                  #.
-                  ##
-                   #.
-                   ##
-                    #.
-```
-
----
-
-### CUDA mnist dataset test
-
-```
-Epoch: 0 || Train loss: 2.49682 || Test loss: 2.41311 || Train accuracy: 13.24% || Test accuracy: 14.6%
-Epoch: 100 || Train loss: 1.49957 || Test loss: 1.53557 || Train accuracy: 64.78% || Test accuracy: 63.3%
-Epoch: 200 || Train loss: 0.805449 || Test loss: 0.897347 || Train accuracy: 80.5% || Test accuracy: 75.8%
-Epoch: 300 || Train loss: 0.56172 || Test loss: 0.663556 || Train accuracy: 85.48% || Test accuracy: 80.8%
-Epoch: 400 || Train loss: 0.456369 || Test loss: 0.559097 || Train accuracy: 87.46% || Test accuracy: 83.6%
-Epoch: 500 || Train loss: 0.396975 || Test loss: 0.501145 || Train accuracy: 88.66% || Test accuracy: 85.2%
-Epoch: 600 || Train loss: 0.357763 || Test loss: 0.464023 || Train accuracy: 89.7% || Test accuracy: 86.1%
-```
-
-CUDA mnist training time: 7.91312 seconds
-
-Truth: 9 || Pred: 9
-
-```
-        .#
-      .###
-      ####.
-     .######.
-     ########
-    .##  .####
-    .#.   ####
-    .#.   ###.
-    .## ..####
-     ###### ##.
-      ###.  .##
-       ..    .#.
-             .##
-              .#.
-               ##
-               .#.
-                ##
-                 #.
-                 ##
-                  #.
-                  ##
-                   #.
-                   ##
-                    #.
-```
-
----
-
-C:\Users\ASUS\source\repos\NeuralNetwork\x64\Release\NeuralNetwork.exe (process 14228) exited with code 0 (0x0).  
-To automatically close the console when debugging stops, enable Tools->Options->Debugging->Automatically close the console when debugging stops.  
+C:\Users\ASUS\source\repos\NeuralNetwork\x64\Release\NeuralNetwork.exe (process 14772) exited with code 0 (0x0).
+To automatically close the console when debugging stops, enable Tools->Options->Debugging->Automatically close the console when debugging stops.
 Press any key to close this window . . .
