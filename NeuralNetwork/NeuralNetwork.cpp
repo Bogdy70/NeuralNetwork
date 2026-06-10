@@ -3,17 +3,11 @@
 
 #include <iostream>
 #include <vector>
-#include <fstream>
 #include <cmath>
 #include <string>
-#include <sstream>
-#include <random>
-#include <cstdint>
 #include <chrono>
-#include <filesystem>
 #include <stdexcept>
 #include "Backends.h"
-#include <omp.h>
 
 using namespace std;
 
@@ -361,22 +355,25 @@ int main()
         cout << "y_test_mnist: (" << y_test_mnist.getRows() << ", " << y_test_mnist.getCols() << ")\n\n";
 
 
-
-        cout << "Sequential cat dataset test\n\n";
-
         vector<int> dim_list = { X_train_cat.getRows(), 100, 100, 200, y_train_cat.getRows() };
-
         auto start = std::chrono::high_resolution_clock::now();
+        auto end = std::chrono::high_resolution_clock::now();
+        std::chrono::duration<double> elapsed;
+
+
+        /*cout << "Sequential cat dataset test\n\n";
+
+        start = std::chrono::high_resolution_clock::now();
 
         Parameters<SequentialBackend> params1 = train<SequentialBackend>(X_train_cat, X_test_cat, y_train_cat, y_test_cat, dim_list, "tanh", 0.005f, 700, 100);
 
-        auto end = std::chrono::high_resolution_clock::now();
+        end = std::chrono::high_resolution_clock::now();
 
-        std::chrono::duration<double> elapsed = end - start;
+        elapsed = end - start;
 
         cout << "\nSequential cat training time: " << elapsed.count() << " seconds\n";
 
-        predict<SequentialBackend>(X_test_cat, y_test_cat, params1, "tanh", 7);
+        predict<SequentialBackend>(X_test_cat, y_test_cat, params1, "tanh", 7);*/
 
         
 
@@ -414,9 +411,9 @@ int main()
 
 
 
-        cout << "\n\nSequential mnist dataset test\n\n";
-
         dim_list = { X_train_mnist.getRows(), 100, 100, 200, y_train_mnist.getRows() };
+
+        /*cout << "\n\nSequential mnist dataset test\n\n";
 
         start = std::chrono::high_resolution_clock::now();
 
@@ -428,7 +425,7 @@ int main()
 
         cout << "\nSequential mnist training time: " << elapsed.count() << " seconds\n";
 
-        predict<SequentialBackend>(X_test_mnist, y_test_mnist, params4, "relu", 7);
+        predict<SequentialBackend>(X_test_mnist, y_test_mnist, params4, "relu", 7);*/
 
 
 
