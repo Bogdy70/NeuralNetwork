@@ -257,6 +257,22 @@ Matrix OpenMPBackend::greaterth(const Matrix& A, float x)
     return C;
 }
 
+Matrix OpenMPBackend::lessth(const Matrix& A, float x)
+{
+    Matrix C(A.getRows(), A.getCols());
+
+#pragma omp parallel for
+    for (int i = 0; i < A.getRows(); i++)
+    {
+        for (int j = 0; j < A.getCols(); j++)
+        {
+            C(i, j) = A(i, j) < x ? 1.0f : 0.0f;
+        }
+    }
+
+    return C;
+}
+
 Matrix OpenMPBackend::broadcastAdd(const Matrix& A, const Matrix& B)
 {
     if (A.getRows() != B.getRows() || B.getCols() != 1)
@@ -450,6 +466,22 @@ Matrix OpenMPBackend::logM(const Matrix& A)
             if (A(i, j) <= 0)
                 throw runtime_error("Matrix values must be positive");
             C(i, j) = log(A(i, j));
+        }
+    }
+
+    return C;
+}
+
+Matrix OpenMPBackend::absM(const Matrix& A)
+{
+    Matrix C(A.getRows(), A.getCols());
+
+#pragma omp parallel for
+    for (int i = 0; i < A.getRows(); i++)
+    {
+        for (int j = 0; j < A.getCols(); j++)
+        {
+            C(i, j) = abs(A(i, j));
         }
     }
 

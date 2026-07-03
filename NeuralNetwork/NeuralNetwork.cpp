@@ -35,16 +35,57 @@ typename Backend::Mat der_tanh(const typename Backend::Mat& A)
 }
 
 template <typename Backend>
-float cost(const typename Backend::Mat& Y, const typename Backend::Mat& pred)
+typename Backend::Mat sign(const typename Backend::Mat& A)
+{
+    return (A > 0.0f) - (A < 0.0f);
+}
+
+template <typename Backend>
+struct Parameters
+{
+    vector<typename Backend::Mat> W;
+    vector<typename Backend::Mat> B;
+
+    Parameters(int dim) : W(dim), B(dim) {}
+};
+
+template <typename Backend>
+float cost(const typename Backend::Mat& Y, const typename Backend::Mat& pred, const Parameters<Backend>& params, const float lambda_l1=0.0f, const float lambda_l2=0.0f)
 {
     int m = Y.getCols();
+    int L = size(params.W);
     float epsilon = 1e-8f;
+    float cost = 0.0f;
+    float sumw = 0.0f;
     typename Backend::Mat clippedPred = Backend::clipM(pred, epsilon, 1.0f - epsilon);
 
+    if (lambda_l1 < 0.0f || lambda_l2 < 0.0f)
+        throw runtime_error("Lambda value cannot be less than zero.");
+
     if (Y.getRows() > 1)
-        return (-1.0f / static_cast<float>(m)) * Backend::toScalar(Backend::sum(Backend::mul(Y, Backend::logM(clippedPred))));
+        cost = (-1.0f / static_cast<float>(m)) * Backend::toScalar(Backend::sum(Backend::mul(Y, Backend::logM(clippedPred))));
     else
-        return (-1.0f / static_cast<float>(m)) * Backend::toScalar(Backend::sum(Backend::add(Backend::mul(Y, Backend::logM(clippedPred)), Backend::mul(Backend::scalarSub(1.0f, Y), Backend::logM(Backend::scalarSub(1.0f, clippedPred))))));
+        cost = (-1.0f / static_cast<float>(m)) * Backend::toScalar(Backend::sum(Backend::add(Backend::mul(Y, Backend::logM(clippedPred)), Backend::mul(Backend::scalarSub(1.0f, Y), Backend::logM(Backend::scalarSub(1.0f, clippedPred))))));
+
+    if (lambda_l1 > 0.0f)
+    {
+        sumw = 0.0f;
+        for (int l = 1; l < L; l++)
+        {
+            sumw += Backend::toScalar(Backend::sum(Backend::absM(params.W[l])));
+        }
+        cost += (lambda_l1 / static_cast<float>(m)) * sumw;
+    }
+    if (lambda_l2 > 0.0f)
+    {
+        sumw = 0.0f;
+        for (int l = 1; l < L; l++)
+        {
+            sumw += Backend::toScalar(Backend::sum(Backend::mul(params.W[l], params.W[l])));
+        }
+        cost += (lambda_l2 / (2.0f * static_cast<float>(m))) * sumw;
+    }
+    return cost;
 }
 
 template <typename Backend>
@@ -63,15 +104,6 @@ float accuracy(const typename Backend::Mat& Y, const typename Backend::Mat& pred
         return Backend::toScalar(Backend::sum(Backend::equals(Y, pred_labels))) / static_cast<float>(Y.getCols());
     }
 }
-
-template <typename Backend>
-struct Parameters
-{
-    vector<typename Backend::Mat> W;
-    vector<typename Backend::Mat> B;
-
-    Parameters(int dim): W(dim), B(dim) {}
-};
 
 template <typename Backend>
 struct Forward
@@ -236,7 +268,7 @@ Parameters<Backend> train(const typename Backend::Mat& X_train,
     for (int epoch = 0; epoch <= epochs; epoch++)
     {
         Forward<Backend> frd_cache = forward_pass<Backend>(params, X_train, activation);
-        float train_cost = cost<Backend>(y_train, frd_cache.A[size(dim_list) - 1]);
+        float train_cost = cost<Backend>(y_train, frd_cache.A[size(dim_list) - 1], params);
         float train_acc = accuracy<Backend>(y_train, frd_cache.A[size(dim_list) - 1]);
         Backward<Backend> grads = backpropagation<Backend>(frd_cache, params, y_train, activation);
         optimizer<Backend>(params, grads, lr);
@@ -252,7 +284,7 @@ Parameters<Backend> train(const typename Backend::Mat& X_train,
             std::chrono::duration<double> elapsed = current_time - start_time;
 
             frd_cache = forward_pass<Backend>(params, X_test, activation);
-            float test_cost = cost<Backend>(y_test, frd_cache.A[size(dim_list) - 1]);
+            float test_cost = cost<Backend>(y_test, frd_cache.A[size(dim_list) - 1], params);
             float test_acc = accuracy<Backend>(y_test, frd_cache.A[size(dim_list) - 1]);
             cout << "Epoch: " << epoch << " || Train loss: " << train_cost << " || Test loss: " << test_cost << " || Train accuracy: " << train_acc * 100.0f << "% || Test accuracy: " << test_acc * 100.0f << "% || Time: "<<elapsed.count()<<" sec\n";
         }

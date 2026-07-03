@@ -58,6 +58,8 @@ public:
 
 	CMatrix operator>(float x) const;
 
+	CMatrix operator<(float x) const;
+
 	CMatrix broadcastAdd(const CMatrix& B) const;
 
 	CMatrix broadcastDiv(const CMatrix& B) const;
@@ -75,6 +77,8 @@ public:
 	static CMatrix expM(const CMatrix& A);
 
 	static CMatrix logM(const CMatrix& A);
+
+	static CMatrix absM(const CMatrix& A);
 
 	static CMatrix tanhM(const CMatrix& A);
 

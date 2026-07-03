@@ -6,7 +6,7 @@
 using namespace std;
 
 static random_device rd;
-static mt19937 gen(rd());
+static mt19937 gen(42);
 
 Matrix::Matrix() : rows(0), cols(0) {}
 
@@ -307,6 +307,21 @@ Matrix Matrix::operator>(float x) const
     return C;
 }
 
+Matrix Matrix::operator<(float x) const
+{
+    Matrix C(rows, cols);
+
+    for (int i = 0; i < rows; i++)
+    {
+        for (int j = 0; j < cols; j++)
+        {
+            C(i, j) = data[i * cols + j] < x ? 1.0f : 0.0f;
+        }
+    }
+
+    return C;
+}
+
 Matrix Matrix::broadcastAdd(const Matrix& B) const
 {
     if (rows != B.rows || B.cols != 1)
@@ -489,6 +504,21 @@ Matrix Matrix::logM(const Matrix& A)
             if (A(i, j) <= 0)
                 throw runtime_error("Matrix values must be positive");
             C(i, j) = log(A(i, j));
+        }
+    }
+
+    return C;
+}
+
+Matrix Matrix::absM(const Matrix& A)
+{
+    Matrix C(A.rows, A.cols);
+
+    for (int i = 0; i < A.rows; i++)
+    {
+        for (int j = 0; j < A.cols; j++)
+        {
+            C(i, j) = abs(A(i, j));
         }
     }
 

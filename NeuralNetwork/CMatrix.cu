@@ -381,6 +381,29 @@ CMatrix CMatrix::operator>(float x) const
 	return C;
 }
 
+__global__ void lessthKernel(const float* A, float x, float* C, int N, int M)
+{
+	int i = blockIdx.y * blockDim.y + threadIdx.y;
+	int j = blockIdx.x * blockDim.x + threadIdx.x;
+
+	if (i < N && j < M)
+	{
+		C[i * M + j] = A[i * M + j] < x ? 1.0f : 0.0f;
+	}
+}
+
+CMatrix CMatrix::operator<(float x) const
+{
+	CMatrix C(rows, cols);
+
+	dim3 block(16, 16);
+	dim3 grid((cols + block.x - 1) / block.x, (rows + block.y - 1) / block.y);
+
+	lessthKernel << <grid, block >> > (data, x, C.rawData(), rows, cols);
+
+	return C;
+}
+
 __global__ void broadcastAddKernel(const float* A, const float* B, float* C, int N, int M)
 {
 	int i = blockIdx.y * blockDim.y + threadIdx.y;
@@ -654,6 +677,29 @@ CMatrix CMatrix::logM(const CMatrix& A)
 	dim3 grid((A.getCols() + block.x - 1) / block.x, (A.getRows() + block.y - 1) / block.y);
 
 	logKernel << <grid, block >> > (A.rawData(), C.rawData(), A.getRows(), A.getCols());
+
+	return C;
+}
+
+__global__ void absKernel(const float* A, float* C, int N, int M)
+{
+	int i = blockIdx.y * blockDim.y + threadIdx.y;
+	int j = blockIdx.x * blockDim.x + threadIdx.x;
+
+	if (i < N && j < M)
+	{
+		C[i*M+j] = abs(A[i*M+j]);
+	}
+}
+
+CMatrix CMatrix::absM(const CMatrix& A)
+{
+	CMatrix C(A.getRows(), A.getCols());
+
+	dim3 block(16, 16);
+	dim3 grid((A.cols + block.x - 1) / block.x, (A.rows + block.y - 1) / block.y);
+
+	absKernel << <grid, block >> > (A.rawData(), C.rawData(), A.getRows(), A.getCols());
 
 	return C;
 }

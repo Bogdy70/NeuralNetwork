@@ -62,6 +62,8 @@ public:
 
     Matrix operator>(float x) const;
 
+    Matrix operator<(float x) const;
+
     Matrix broadcastAdd(const Matrix& B) const;
 
     Matrix broadcastDiv(const Matrix& B) const;
@@ -79,6 +81,8 @@ public:
     static Matrix expM(const Matrix& A);
 
     static Matrix logM(const Matrix& A);
+
+    static Matrix absM(const Matrix& A);
 
     static Matrix tanhM(const Matrix& A);
 

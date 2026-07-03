@@ -71,6 +71,11 @@ struct SequentialBackend
         return A > x;
     }
 
+    static Mat lessth(const Mat& A, float x)
+    {
+        return A < x;
+    }
+
     static Mat broadcastAdd(const Mat& A, const Mat& B)
     {
         return A.broadcastAdd(B);
@@ -114,6 +119,11 @@ struct SequentialBackend
     static Mat logM(const Mat& A)
     {
         return Mat::logM(A);
+    }
+
+    static Mat absM(const Mat& A)
+    {
+        return Mat::absM(A);
     }
 
     static Mat tanhM(const Mat& A)
@@ -187,6 +197,8 @@ struct OpenMPBackend
 
     static Mat greaterth(const Mat& A, float x);
 
+    static Mat lessth(const Mat& A, float x);
+
     static Mat broadcastAdd(const Mat& A, const Mat& B);
 
     static Mat broadcastDiv(const Mat& A, const Mat& B);
@@ -204,6 +216,8 @@ struct OpenMPBackend
     static Mat expM(const Mat& A);
 
     static Mat logM(const Mat& A);
+
+    static Mat absM(const Mat& A);
 
     static Mat tanhM(const Mat& A);
 
@@ -281,6 +295,11 @@ struct CUDABackend
         return A > x;
     }
 
+    static Mat lessth(const Mat& A, float x)
+    {
+        return A < x;
+    }
+
     static Mat broadcastAdd(const Mat& A, const Mat& B)
     {
         return A.broadcastAdd(B);
@@ -324,6 +343,11 @@ struct CUDABackend
     static Mat logM(const Mat& A)
     {
         return Mat::logM(A);
+    }
+
+    static Mat absM(const Mat& A)
+    {
+        return Mat::absM(A);
     }
 
     static Mat tanhM(const Mat& A)
