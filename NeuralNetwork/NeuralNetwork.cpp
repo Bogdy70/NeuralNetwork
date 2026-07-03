@@ -225,7 +225,7 @@ Forward<Backend> forward_pass(const Parameters<Backend>& params, const typename 
 }
 
 template<typename Backend>
-Backward<Backend> backpropagation(const Forward<Backend>& frd_cache, const Parameters<Backend>& params, const typename Backend::Mat& Y, const string& activation)
+Backward<Backend> backpropagation(const Forward<Backend>& frd_cache, const Parameters<Backend>& params, const typename Backend::Mat& Y, const string& activation, const float dropout=0.0f, const float lambda_l1=0.0f, const float lambda_l2=0.0f)
 {
     int L = size(frd_cache.A);
     int m = Y.getCols();
@@ -235,11 +235,22 @@ Backward<Backend> backpropagation(const Forward<Backend>& frd_cache, const Param
     grads.dZ[L - 1] = Backend::sub(frd_cache.A[L - 1], Y);
     grads.dW[L - 1] =  Backend::scalarMul(Backend::matmul(grads.dZ[L - 1], Backend::T(frd_cache.A[L - 2])), (1.0f / static_cast<float>(m)));
     grads.dB[L - 1] =  Backend::scalarMul(Backend::sum(grads.dZ[L - 1], 1), (1.0f / static_cast<float>(m)));
+    if (lambda_l1 > 0.0f)
+        grads.dW[L - 1] = Backend::add(grads.dW[L - 1], Backend::scalarMul(sign<Backend>(params.W[L - 1]), (lambda_l1 / static_cast<float>(m))));
+    if (lambda_l2 > 0.0f)
+        grads.dW[L - 1] = Backend::add(grads.dW[L - 1], Backend::scalarMul(params.W[L - 1], (lambda_l2 / static_cast<float>(m))));
 
     for (int l = L - 2; l > 0; l--)
     {
-        grads.dZ[l] = Backend::mul(Backend::matmul(Backend::T(params.W[l + 1]), grads.dZ[l + 1]), activ.derivate(frd_cache.Z[l]));
+        grads.dZ[l] = Backend::matmul(Backend::T(params.W[l + 1]), grads.dZ[l + 1]);
+        if (dropout > 0.0f)
+            grads.dZ[l] = Backend::divScalar(Backend::mul(grads.dZ[l], frd_cache.D[l]), (1.0f - dropout));
+        grads.dZ[l] = Backend::mul(grads.dZ[l], activ.derivate(frd_cache.Z[l]));
         grads.dW[l] = Backend::scalarMul(Backend::matmul(grads.dZ[l], Backend::T(frd_cache.A[l - 1])), (1.0f / static_cast<float>(m)));
+        if (lambda_l1 > 0.0f)
+            grads.dW[l] = Backend::add(grads.dW[l], Backend::scalarMul(sign<Backend>(params.W[l]), (lambda_l1 / static_cast<float>(m))));
+        if (lambda_l2 > 0.0f)
+            grads.dW[l] = Backend::add(grads.dW[l], Backend::scalarMul(params.W[l], (lambda_l2 / static_cast<float>(m))));
         grads.dB[l] = Backend::scalarMul(Backend::sum(grads.dZ[l], 1), (1.0f / static_cast<float>(m)));
     }
 
@@ -268,7 +279,10 @@ Parameters<Backend> train(const typename Backend::Mat& X_train,
     const string& activation,
     const float lr,
     const int epochs,
-    const int viewing_rate)
+    const int viewing_rate,
+    const float dropout=0.0f,
+    const float lambda_l1=0.0f,
+    const float lambda_l2=0.0f)
 {
     Parameters<Backend> params = init_params<Backend>(dim_list);
 
@@ -276,10 +290,8 @@ Parameters<Backend> train(const typename Backend::Mat& X_train,
 
     for (int epoch = 0; epoch <= epochs; epoch++)
     {
-        Forward<Backend> frd_cache = forward_pass<Backend>(params, X_train, activation);
-        float train_cost = cost<Backend>(y_train, frd_cache.A[size(dim_list) - 1], params);
-        float train_acc = accuracy<Backend>(y_train, frd_cache.A[size(dim_list) - 1]);
-        Backward<Backend> grads = backpropagation<Backend>(frd_cache, params, y_train, activation);
+        Forward<Backend> frd_cache = forward_pass<Backend>(params, X_train, activation, dropout);
+        Backward<Backend> grads = backpropagation<Backend>(frd_cache, params, y_train, activation, dropout, lambda_l1, lambda_l2);
         optimizer<Backend>(params, grads, lr);
 
         if (epoch % viewing_rate == 0)
@@ -289,13 +301,19 @@ Parameters<Backend> train(const typename Backend::Mat& X_train,
                 cudaDeviceSynchronize();
             }
 
-            auto current_time = std::chrono::high_resolution_clock::now();
-            std::chrono::duration<double> elapsed = current_time - start_time;
+            Forward<Backend> train_eval_cache = forward_pass<Backend>(params, X_train, activation);
+            float train_objective = cost<Backend>(y_train, train_eval_cache.A[size(dim_list) - 1], params, lambda_l1, lambda_l2);
+            float train_cost = cost<Backend>(y_train, train_eval_cache.A[size(dim_list) - 1], params);
+            float train_acc = accuracy<Backend>(y_train, train_eval_cache.A[size(dim_list) - 1]);
 
             frd_cache = forward_pass<Backend>(params, X_test, activation);
             float test_cost = cost<Backend>(y_test, frd_cache.A[size(dim_list) - 1], params);
             float test_acc = accuracy<Backend>(y_test, frd_cache.A[size(dim_list) - 1]);
-            cout << "Epoch: " << epoch << " || Train loss: " << train_cost << " || Test loss: " << test_cost << " || Train accuracy: " << train_acc * 100.0f << "% || Test accuracy: " << test_acc * 100.0f << "% || Time: "<<elapsed.count()<<" sec\n";
+
+            auto current_time = std::chrono::high_resolution_clock::now();
+            std::chrono::duration<double> elapsed = current_time - start_time;
+
+            cout << "Epoch: " << epoch << " || Train objective: "<< train_objective << " || Train loss : " << train_cost << " || Test loss : " << test_cost << " || Train accuracy : " << train_acc * 100.0f << " % || Test accuracy : " << test_acc * 100.0f << " % || Time : "<<elapsed.count()<<" sec\n";
         }
     }
 
@@ -418,11 +436,11 @@ int main()
 
         
 
-        cout << "\n\nOpenMP cat dataset test\n\n";
+        /*cout << "\n\nOpenMP cat dataset test\n\n";
 
         start = std::chrono::high_resolution_clock::now();
 
-        Parameters<OpenMPBackend> params2 = train<OpenMPBackend>(X_train_cat, X_test_cat, y_train_cat, y_test_cat, dim_list, "tanh", 0.005f, 700, 100);
+        Parameters<OpenMPBackend> params2 = train<OpenMPBackend>(X_train_cat, X_test_cat, y_train_cat, y_test_cat, dim_list, "tanh", 0.005f, 700, 100, 0.8);
 
         end = std::chrono::high_resolution_clock::now();
 
@@ -430,7 +448,7 @@ int main()
 
         cout << "\nOpenMP cat training time: " << elapsed.count() << " seconds\n";
 
-        predict<OpenMPBackend>(X_test_cat, y_test_cat, params2, "tanh", 7);
+        predict<OpenMPBackend>(X_test_cat, y_test_cat, params2, "tanh", 7);*/
 
 
 
@@ -438,7 +456,7 @@ int main()
 
         start = std::chrono::high_resolution_clock::now();
 
-        Parameters<CUDABackend> params3 = train<CUDABackend>(X_train_cat.toCUDA(), X_test_cat.toCUDA(), y_train_cat.toCUDA(), y_test_cat.toCUDA(), dim_list, "tanh", 0.005f, 700, 100);
+        Parameters<CUDABackend> params3 = train<CUDABackend>(X_train_cat.toCUDA(), X_test_cat.toCUDA(), y_train_cat.toCUDA(), y_test_cat.toCUDA(), dim_list, "tanh", 0.005f, 700, 100, 0.2, 0.0f, 0.01f);
 
         cudaDeviceSynchronize();
 
@@ -470,7 +488,7 @@ int main()
 
 
 
-        cout << "\n\nOpenMP mnist dataset test\n\n";
+        /*cout << "\n\nOpenMP mnist dataset test\n\n";
 
         start = std::chrono::high_resolution_clock::now();
 
@@ -482,7 +500,7 @@ int main()
 
         cout << "\nOpenMP mnist training time: " << elapsed.count() << " seconds\n";
         
-        predict<OpenMPBackend>(X_test_mnist, y_test_mnist, params5, "relu", 7);
+        predict<OpenMPBackend>(X_test_mnist, y_test_mnist, params5, "relu", 7);*/
 
 
 
@@ -490,7 +508,7 @@ int main()
 
         start = std::chrono::high_resolution_clock::now();
 
-        Parameters<CUDABackend> params6 = train<CUDABackend>(X_train_mnist.toCUDA(), X_test_mnist.toCUDA(), y_train_mnist.toCUDA(), y_test_mnist.toCUDA(), dim_list, "relu", 0.01f, 700, 100);
+        Parameters<CUDABackend> params6 = train<CUDABackend>(X_train_mnist.toCUDA(), X_test_mnist.toCUDA(), y_train_mnist.toCUDA(), y_test_mnist.toCUDA(), dim_list, "relu", 0.01f, 1000, 100, 0.0f, 0.0f, 0.01);
 
         cudaDeviceSynchronize();
 
