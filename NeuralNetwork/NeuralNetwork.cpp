@@ -289,11 +289,7 @@ Parameters<Backend> train(const typename Backend::Mat& X_train,
     auto start_time = std::chrono::high_resolution_clock::now();
 
     for (int epoch = 0; epoch <= epochs; epoch++)
-    {
-        Forward<Backend> frd_cache = forward_pass<Backend>(params, X_train, activation, dropout);
-        Backward<Backend> grads = backpropagation<Backend>(frd_cache, params, y_train, activation, dropout, lambda_l1, lambda_l2);
-        optimizer<Backend>(params, grads, lr);
-
+    {   
         if (epoch % viewing_rate == 0)
         {
             if constexpr (std::is_same_v<Backend, CUDABackend>)
@@ -302,19 +298,27 @@ Parameters<Backend> train(const typename Backend::Mat& X_train,
             }
 
             Forward<Backend> train_eval_cache = forward_pass<Backend>(params, X_train, activation);
+            Forward<Backend> frd_cache_test = forward_pass<Backend>(params, X_test, activation);
+
             float train_objective = cost<Backend>(y_train, train_eval_cache.A[size(dim_list) - 1], params, lambda_l1, lambda_l2);
             float train_cost = cost<Backend>(y_train, train_eval_cache.A[size(dim_list) - 1], params);
             float train_acc = accuracy<Backend>(y_train, train_eval_cache.A[size(dim_list) - 1]);
 
-            frd_cache = forward_pass<Backend>(params, X_test, activation);
-            float test_cost = cost<Backend>(y_test, frd_cache.A[size(dim_list) - 1], params);
-            float test_acc = accuracy<Backend>(y_test, frd_cache.A[size(dim_list) - 1]);
+            float test_cost = cost<Backend>(y_test, frd_cache_test.A[size(dim_list) - 1], params);
+            float test_acc = accuracy<Backend>(y_test, frd_cache_test.A[size(dim_list) - 1]);
 
             auto current_time = std::chrono::high_resolution_clock::now();
             std::chrono::duration<double> elapsed = current_time - start_time;
 
-            cout << "Epoch: " << epoch << " || Train objective: "<< train_objective << " || Train loss : " << train_cost << " || Test loss : " << test_cost << " || Train accuracy : " << train_acc * 100.0f << " % || Test accuracy : " << test_acc * 100.0f << " % || Time : "<<elapsed.count()<<" sec\n";
+            cout << "Epoch: " << epoch << " || Train objective: " << train_objective << " || Train loss : " << train_cost << " || Test loss : " << test_cost << " || Train accuracy : " << train_acc * 100.0f << " % || Test accuracy : " << test_acc * 100.0f << " % || Time : " << elapsed.count() << " sec\n";
         }
+
+        if (epoch == epochs)
+            break;
+
+        Forward<Backend> frd_cache = forward_pass<Backend>(params, X_train, activation, dropout);
+        Backward<Backend> grads = backpropagation<Backend>(frd_cache, params, y_train, activation, dropout, lambda_l1, lambda_l2);
+        optimizer<Backend>(params, grads, lr);
     }
 
     return params;
