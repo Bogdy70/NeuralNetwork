@@ -91,9 +91,14 @@ struct SequentialBackend
         return A.T();
     }
 
-    static Mat random(int rows, int cols)
+    static Mat random(const int rows, const int cols)
     {
         return Mat::random(rows, cols);
+    }
+
+    static Mat randomUniform(const int rows, const int cols, const float start, const float end)
+    {
+        return Mat::randomUniform(rows, cols, start, end);
     }
 
     static Mat sum(const Mat& A, int axis = -1)
@@ -205,7 +210,9 @@ struct OpenMPBackend
 
     static Mat T(const Mat& A);
 
-    static Mat random(int rows, int cols);
+    static Mat random(const int rows, const int cols);
+
+    static Mat randomUniform(const int rows, const int cols, const int start, const int end);
 
     static Mat sum(const Mat& A, int axis = -1);
 
@@ -315,9 +322,14 @@ struct CUDABackend
         return A.T();
     }
 
-    static Mat random(int rows, int cols)
+    static Mat random(const int rows, const int cols)
     {
         return Mat::random(rows, cols);
+    }
+
+    static Mat randomUniform(const int rows, const int cols, const float start, const float end)
+    {
+        return Mat::randomUniform(rows, cols, start, end);
     }
 
     static Mat sum(const Mat& A, int axis = -1)

@@ -392,6 +392,23 @@ Matrix Matrix::random(const int rows, const int cols)
     return C;
 }
 
+Matrix Matrix::randomUniform(const int rows, const int cols, const float start, const float end)
+{
+    uniform_real_distribution<float> dist(start, end);
+
+    Matrix C(rows, cols);
+
+    for (int i = 0; i < rows; i++)
+    {
+        for (int j = 0; j < cols; j++)
+        {
+            C(i, j) = dist(gen);
+        }
+    }
+
+    return C;
+}
+
 Matrix Matrix::sum(const Matrix& A, int axis)
 {
     if (axis == 0)

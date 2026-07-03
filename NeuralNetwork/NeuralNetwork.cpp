@@ -110,8 +110,9 @@ struct Forward
 {
     vector<typename Backend::Mat> Z;
     vector<typename Backend::Mat> A;
+    vector<typename Backend::Mat> D;
 
-    Forward(int dim) : Z(dim), A(dim) {}
+    Forward(int dim) : Z(dim), A(dim), D(dim){}
 };
 
 template <typename Backend>
@@ -194,8 +195,11 @@ Parameters<Backend> init_params(const vector<int>& dim_list)
 }
 
 template<typename Backend>
-Forward<Backend> forward_pass(const Parameters<Backend>& params, const typename Backend::Mat& X, const string& activation)
+Forward<Backend> forward_pass(const Parameters<Backend>& params, const typename Backend::Mat& X, const string& activation, const float dropout=0.0f)
 {
+    if (dropout < 0.0f || dropout >= 1.0f)
+        throw runtime_error("Dropout value must be between [0, 1).");
+
     int L = size(params.W);
     Forward<Backend> forward_cache(L);
     Activation<Backend> activ(activation);
@@ -207,10 +211,15 @@ Forward<Backend> forward_pass(const Parameters<Backend>& params, const typename 
     {
         forward_cache.Z[l] = Backend::broadcastAdd(Backend::matmul(params.W[l], forward_cache.A[l - 1]), params.B[l]);
         forward_cache.A[l] = activ.forward(forward_cache.Z[l]);
+        if (dropout > 0.0f)
+        {
+            forward_cache.D[l] = Backend::lessth(Backend::randomUniform(forward_cache.A[l].getRows(), forward_cache.A[l].getCols(), 0.0f, 1.0f), (1.0f - dropout));
+            forward_cache.A[l] = Backend::divScalar(Backend::mul(forward_cache.A[l], forward_cache.D[l]), (1.0f - dropout));
+        }
     }
-    forward_cache.Z[L-1] = Backend::broadcastAdd(Backend::matmul(params.W[L-1], forward_cache.A[L - 2]), params.B[L-1]);
-    final_activ = forward_cache.Z[L-1].getRows() > 1 ? softmax<Backend> : sigmoid<Backend>;
-    forward_cache.A[L-1] = final_activ(forward_cache.Z[L-1]);
+    forward_cache.Z[L - 1] = Backend::broadcastAdd(Backend::matmul(params.W[L - 1], forward_cache.A[L - 2]), params.B[L - 1]);
+    final_activ = forward_cache.Z[L - 1].getRows() > 1 ? softmax<Backend> : sigmoid<Backend>;
+    forward_cache.A[L - 1] = final_activ(forward_cache.Z[L - 1]);
 
     return forward_cache;
 }

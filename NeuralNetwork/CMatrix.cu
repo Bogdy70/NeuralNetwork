@@ -479,9 +479,16 @@ CMatrix CMatrix::T() const
 	return C;
 }
 
-CMatrix CMatrix::random(int rows, int cols)
+CMatrix CMatrix::random(const int rows, const int cols)
 {
 	Matrix R = Matrix::random(rows, cols);
+
+	return R.toCUDA();
+}
+
+CMatrix CMatrix::randomUniform(const int rows, const int cols, const float start, const float end)
+{
+	Matrix R = Matrix::randomUniform(rows, cols, start, end);
 
 	return R.toCUDA();
 }

@@ -66,7 +66,9 @@ public:
 
 	CMatrix T() const;
 
-	static CMatrix random(int rows, int cols);
+	static CMatrix random(const int rows, const int cols);
+
+	static CMatrix randomUniform(const int rows, const int cols, const float start, const float end);
 
 	static CMatrix sum(const CMatrix& A, int axis = -1);
 

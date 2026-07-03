@@ -72,6 +72,8 @@ public:
 
     static Matrix random(const int rows, const int cols);
 
+    static Matrix randomUniform(const int rows, const int cols, const float start, const float end);
+
     static Matrix sum(const Matrix& A, int axis = -1);
 
     static Matrix powM(const Matrix& A, float power);

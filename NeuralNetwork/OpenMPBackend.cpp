@@ -6,7 +6,7 @@
 using namespace std;
 
 static random_device rd;
-static mt19937 gen(rd());
+static mt19937 gen(42);
 
 Matrix OpenMPBackend::matmul(const Matrix& A, const Matrix& B)
 {
@@ -329,7 +329,7 @@ Matrix OpenMPBackend::T(const Matrix& A)
     return Tr;
 }
 
-Matrix OpenMPBackend::random(int rows, int cols)
+Matrix OpenMPBackend::random(const int rows, const int cols)
 {
     normal_distribution<float> dist(0.0f, 1.0f);
 
@@ -339,6 +339,24 @@ Matrix OpenMPBackend::random(int rows, int cols)
     for (int i = 0; i < rows; i++)
     {
         for (int j = 0; j < cols; j++)
+        {
+            C(i, j) = dist(gen);
+        }
+    }
+
+    return C;
+}
+
+Matrix OpenMPBackend::randomUniform(const int rows, const int cols, const int start, const int end)
+{
+    uniform_real_distribution<float> dist(start, end);
+
+    Matrix C(rows, cols);
+
+#pragma omp parallel for
+    for (int i = 0; i < rows; i++)
+    {
+        for(int j = 0; j < cols; j++)
         {
             C(i, j) = dist(gen);
         }
